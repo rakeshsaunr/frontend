@@ -10,9 +10,11 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    setAuth(state, action) {
-      state.user = action.payload.user ?? null;
-      state.token = action.payload.token ?? "";
+    setUser(state, action) {
+      state.user = action.payload;
+    },
+    setToken(state, action) {
+      state.token = action.payload;
     },
     clearAuth(state) {
       state.user = null;
@@ -21,5 +23,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setAuth, clearAuth } = authSlice.actions;
+export const { setUser, setToken, clearAuth } = authSlice.actions;
 export default authSlice.reducer;
