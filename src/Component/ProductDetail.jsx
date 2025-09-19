@@ -108,23 +108,7 @@ export default function ProductDetails() {
     .map((p) => p.trim())
     .filter((p) => p.length > 0);
 
-  const handlePrev = () => {
-    if (!product?.images?.length) return;
-    setCurrentSlide((prev) => {
-      const newIdx = prev === 0 ? product.images.length - 1 : prev - 1;
-      setSelectedImage(product.images[newIdx].url || product.images[newIdx].img);
-      return newIdx;
-    });
-  };
-
-  const handleNext = () => {
-    if (!product?.images?.length) return;
-    setCurrentSlide((prev) => {
-      const newIdx = prev === product.images.length - 1 ? 0 : prev + 1;
-      setSelectedImage(product.images[newIdx].url || product.images[newIdx].img);
-      return newIdx;
-    });
-  };
+  // Removed unused handlePrev/handleNext to satisfy linter
 
   const handleThumbnailClick = (imgSrc, idx) => {
     setSelectedImage(imgSrc);

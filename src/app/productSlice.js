@@ -22,15 +22,28 @@ export const productSlice = createSlice({
       state.error = action.payload;
     },
     addProduct(state, action) {
-      state.products.push(action.payload);
+      const product = action.payload;
+      if (!product) return;
+      state.products.push(product);
     },
     removeProduct(state, action) {
-      state.products = state.products.filter(p => p.id !== action.payload && p._id !== action.payload);
+      const targetId = action.payload && (action.payload._id || action.payload.id || action.payload);
+      state.products = state.products.filter(
+        (p) => p._id !== targetId && p.id !== targetId
+      );
     },
     updateProduct(state, action) {
-      const index = state.products.findIndex(p => p.id === action.payload.id || p._id === action.payload.id);
+      const updated = action.payload;
+      if (!updated) return;
+      const targetId = updated._id || updated.id;
+      const index = state.products.findIndex(
+        (p) => p._id === targetId || p.id === targetId
+      );
       if (index !== -1) {
-        state.products[index] = action.payload;
+        state.products[index] = { ...state.products[index], ...updated };
+      } else {
+        // If not found, append
+        state.products.push(updated);
       }
     },
   },

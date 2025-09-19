@@ -1,6 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import namer from "color-namer";
+import {
+  fetchProductsStart,
+  fetchProductsSuccess,
+  fetchProductsFailure,
+  addProduct,
+  removeProduct,
+  updateProduct,
+  selectProducts,
+  selectLoading,
+  selectError,
+} from "../../../app/productSlice";
 
 // ColorNameConverter function
 const ColorNameConverter = (hex) => {
@@ -26,7 +38,11 @@ const defaultVariantRow = () => ({
 
 const Product = () => {
   console.log("Product Route Hit")
-  const [products, setProducts] = useState([]);
+  const dispatch = useDispatch();
+  const products = useSelector(selectProducts);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
+  
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -38,16 +54,11 @@ const Product = () => {
     isActive: true,
   });
   const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [editingName, setEditingName] = useState("");
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [imageView, setImageView] = useState({ open: false, url: "", alt: "" });
   const [showFormPage, setShowFormPage] = useState(false);
-
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
 
   // Fix: Always ensure product.variant is an array for display
   const normalizeVariants = (variant) => {
@@ -56,8 +67,8 @@ const Product = () => {
     return [];
   };
 
-  const fetchProducts = async () => {
-    setLoading(true);
+  const fetchProducts = useCallback(async () => {
+    dispatch(fetchProductsStart());
     try {
       const res = await axios.get(API_URL);
       console.log("Logs in the Product Section",res.data.data)
@@ -66,12 +77,17 @@ const Product = () => {
         ...prod,
         variant: normalizeVariants(prod.variant),
       }));
-      setProducts(prods);
+      dispatch(fetchProductsSuccess(prods));
     } catch (error) {
       console.error("Error fetching products:", error);
+      dispatch(fetchProductsFailure(error?.response?.data?.message || error?.message || "Error fetching products"));
     }
-    setLoading(false);
-  };
+  }, [dispatch]);
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, [fetchProducts]);
 
   const fetchCategories = async () => {
     try {
@@ -129,7 +145,12 @@ const Product = () => {
   const handleImageChange = (index, field, value) => {
     const updatedImages = [...formData.images];
     if (field === "file") {
-      updatedImages[index][field] = value.target.files[0];
+      const fileObj = value.target.files && value.target.files[0];
+      updatedImages[index][field] = fileObj;
+      // Auto-fill alt if empty using file name or product name
+      if (fileObj && (!updatedImages[index].alt || updatedImages[index].alt.trim() === "")) {
+        updatedImages[index].alt = fileObj.name || formData.name || "image";
+      }
     } else {
       updatedImages[index][field] = value;
     }
@@ -191,66 +212,79 @@ const Product = () => {
       setFormError(error);
       return;
     }
-    setLoading(true);
+    dispatch(fetchProductsStart());
     try {
       // Ensure all variants have colorName filled using ColorNameConverter
       const variantsWithColorName = formData.variants.map((v) => ({
         ...v,
         colorName: v.colorName && v.colorName.trim() !== "" ? v.colorName : ColorNameConverter(v.color),
+        stock: Number(v.stock), // Ensure stock is a number
       }));
 
+      console.log("Sending variants:", variantsWithColorName);
+
+      // Always send multipart/form-data so backend multer populates req.body
+      const token = localStorage.getItem("token");
       let dataToSend = new FormData();
-      dataToSend.append("name", formData.name);
+      dataToSend.append("name", (formData.name && formData.name.trim()) || editingName || "");
       dataToSend.append("description", formData.description);
       dataToSend.append("category", formData.category);
       dataToSend.append("price", formData.price);
       dataToSend.append("isActive", formData.isActive ? "true" : "false");
-      // Ensure 'variant' is always an array and matches backend expectations
       dataToSend.append("variant", JSON.stringify(variantsWithColorName));
 
+      const productNameForAlt = (formData.name && formData.name.trim()) || editingName || "image";
       formData.images.forEach((img) => {
         if (img.file) {
-          dataToSend.append("images", img.file); // new file
-          dataToSend.append("alts", img.alt || "");
+          const altSafe = (img.alt && img.alt.trim()) || productNameForAlt || (img.file && img.file.name) || "image";
+          dataToSend.append("images", img.file);
+          dataToSend.append("alts", altSafe);
         } else if (img._id) {
-          dataToSend.append("existingImages", img._id); // only send if still present
+          dataToSend.append("existingImages", img._id);
         }
       });
-      
-      
-      
 
-      // Fetch token from localStorage
-      const token = localStorage.getItem("token");
+      const requestBody = dataToSend;
       const config = {
         headers: {
-          "Content-Type": "multipart/form-data",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       };
 
       if (editingId) {
-        await axios.put(`${API_URL}/${editingId}`, dataToSend, config);
+        const response = await axios.put(`${API_URL}/${editingId}`, requestBody, config);
+        console.log("Update response:", response.data);
+        const updated = response?.data?.data || response?.data?.updatedProduct || response?.data?.product || null;
+        if (updated) {
+          dispatch(updateProduct(updated));
+        }
         setSuccessMsg("Product updated successfully!");
       } else {
-        await axios.post(API_URL, dataToSend, config);
+        const response = await axios.post(API_URL, requestBody, config);
+        console.log("Create response:", response.data);
+        const created = response?.data?.data || response?.data?.product || null;
+        if (created) {
+          dispatch(addProduct(created));
+        }
         setSuccessMsg("Product added successfully!");
       }
       resetForm();
       fetchProducts();
     } catch (error) {
+      console.error("Error saving product:", error);
+      console.error("Error response:", error?.response?.data);
+      dispatch(fetchProductsFailure(error?.response?.data?.message || error?.message || "Error saving product"));
       setFormError(
         error?.response?.data?.message ||
         error?.message ||
         "Error saving product"
       );
     }
-    setLoading(false);
   };
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
-      setLoading(true);
+      dispatch(fetchProductsStart());
       try {
         // Fetch token from localStorage
         const token = localStorage.getItem("token");
@@ -260,16 +294,17 @@ const Product = () => {
           },
         };
         await axios.delete(`${API_URL}/${id}`, config);
+        dispatch(removeProduct(id));
         setSuccessMsg("Product deleted successfully!");
         fetchProducts();
       } catch (error) {
+        dispatch(fetchProductsFailure(error?.response?.data?.message || error?.message || "Error deleting product"));
         setFormError(
           error?.response?.data?.message ||
           error?.message ||
           "Error deleting product"
         );
       }
-      setLoading(false);
     }
   };
 
@@ -294,6 +329,7 @@ const Product = () => {
       isActive: product.isActive ?? true,
     });
     setEditingId(product._id);
+    setEditingName(product.name || "");
     setFormError("");
     setSuccessMsg("");
     setShowFormPage(true);
@@ -889,7 +925,7 @@ const Product = () => {
                           Loading...
                         </span>
                       ) : (
-                        "No products available"
+                        error ? error : "No products available"
                       )}
                     </td>
                   </tr>

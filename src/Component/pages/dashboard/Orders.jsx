@@ -31,7 +31,6 @@ const Orders = () => {
 
   useEffect(() => {
     fetchOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchOrders = async () => {
@@ -515,7 +514,6 @@ const Orders = () => {
                   onClick={() => {
                     // show raw JSON in console for debugging
                     // developer friendly: you can replace with a copy-to-clipboard feature
-                    // eslint-disable-next-line no-console
                     console.log(selectedOrder);
                     alert("Order JSON printed to console (developer)");
                   }}

@@ -1,3 +1,4 @@
+// src/components/Header.jsx
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
@@ -8,46 +9,58 @@ import {
   LogOut,
   LayoutDashboard,
   Package,
-  CheckCircle, // New icon for success toast
+  CheckCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "/logo.png";
-import { useCart } from "../context/CartContext";
+
+// redux
+import { useSelector, useDispatch } from "react-redux";
+import { setAuth, clearAuth } from "../app/authSlice"; // example action names
+// if you used different names, update these imports
+// cart selector from cart slice
+// (we'll read state.cart.items directly below)
 
 const Header = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const { cart } = useCart();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [authState, setAuthState] = useState({
-    user: JSON.parse(localStorage.getItem("user")) || null,
-    token: localStorage.getItem("token") || "",
-  });
+  // Redux-driven state (cart + auth)
+  const cart = useSelector((state) => state.cart?.items || []);
+  const authUser = useSelector((state) => state.auth?.user || null);
+  // Removed unused variable 'authToken'
 
+  // local UI state
+  const [isOpen, setIsOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [showEmailPopup, setShowEmailPopup] = useState(false);
   const [showOtpPopup, setShowOtpPopup] = useState(false);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showToast, setShowToast] = useState(false); // New state for toast
-
+  const [showToast, setShowToast] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  // on mount: hydrate auth from localStorage into redux (safe if slices not initialized)
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    const storedToken = localStorage.getItem("token");
-    setAuthState({
-      user: storedUser,
-      token: storedToken,
-    });
-  }, []);
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      const storedToken = localStorage.getItem("token");
+      if (storedUser || storedToken) {
+        dispatch(setAuth({ user: storedUser, token: storedToken }));
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, [dispatch]);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("https://navdana-backend-2.onrender.com/api/v1/category");
+        const response = await axios.get(
+          "https://navdana-backend-2.onrender.com/api/v1/category"
+        );
         if (Array.isArray(response.data.categories)) {
           const activeCategories = response.data.categories.filter(
             (cat) => cat.isActive && cat.name !== "All Products"
@@ -101,7 +114,10 @@ const Header = () => {
     }
     try {
       setLoading(true);
-      await axios.post("https://navdana-backend-2.onrender.com/api/v1/user/send-otp", { email });
+      await axios.post(
+        "https://navdana-backend-2.onrender.com/api/v1/user/send-otp",
+        { email }
+      );
       setLoading(false);
       setShowEmailPopup(false);
       setShowOtpPopup(true);
@@ -128,15 +144,18 @@ const Header = () => {
       setLoading(false);
 
       const { user: loggedInUser, token: authToken } = res.data;
+      // persist to localStorage
       localStorage.setItem("user", JSON.stringify(loggedInUser));
       localStorage.setItem("token", authToken);
 
-      setAuthState({ user: loggedInUser, token: authToken });
+      // push into redux
+      dispatch(setAuth({ user: loggedInUser, token: authToken }));
+
       setShowOtpPopup(false);
       setEmail("");
       setOtp("");
-      setShowToast(true); // Show toast on successful login
-      setTimeout(() => setShowToast(false), 3000); // Hide toast after 3 seconds
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
     } catch {
       setLoading(false);
       alert("Invalid OTP, try again");
@@ -146,7 +165,7 @@ const Header = () => {
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    setAuthState({ user: null, token: "" });
+    dispatch(clearAuth());
     navigate("/");
     setDropdownOpen(false);
   };
@@ -163,7 +182,11 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center animate-slide-down">
         {/* Left Section: Mobile Menu & Logo */}
         <div className="flex items-center space-x-4 animate-fade-in-left">
-          <button className="lg:hidden p-2 text-gray-800 transition-transform hover:scale-110" onClick={() => setIsOpen(!isOpen)} aria-label="Open menu">
+          <button
+            className="lg:hidden p-2 text-gray-800 transition-transform hover:scale-110"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Open menu"
+          >
             <Menu className="w-6 h-6" />
           </button>
           <div className="flex-shrink-0">
@@ -193,13 +216,20 @@ const Header = () => {
 
         {/* Right Section: Icons */}
         <div className="flex items-center space-x-6 animate-fade-in-right">
-          {/* Search */}
-          <button onClick={() => navigate("/coming-soon")} aria-label="Search" className="transition-transform hover:scale-110">
+          <button
+            onClick={() => navigate("/coming-soon")}
+            aria-label="Search"
+            className="transition-transform hover:scale-110"
+          >
             <Search className="w-6 h-6 text-gray-700 hover:text-gray-900 transition-colors" />
           </button>
 
           {/* Cart */}
-          <div className="relative cursor-pointer transition-transform hover:scale-110" onClick={() => navigate("/cart")} aria-label="Shopping Cart">
+          <div
+            className="relative cursor-pointer transition-transform hover:scale-110"
+            onClick={() => navigate("/cart")}
+            aria-label="Shopping Cart"
+          >
             <ShoppingCart className="w-6 h-6 text-gray-700 hover:text-gray-900 transition-colors" />
             {cart.length > 0 && (
               <span className="absolute -top-1 -right-1 inline-flex items-center justify-center h-4 w-4 text-xs font-bold text-white bg-red-600 rounded-full ring-2 ring-white animate-bounce-in">
@@ -209,24 +239,37 @@ const Header = () => {
           </div>
 
           {/* User / Login */}
-          {!authState.user ? (
-            <button onClick={openLoginPopup} aria-label="Login" className="transition-transform hover:scale-110">
+          {!authUser ? (
+            <button
+              onClick={openLoginPopup}
+              aria-label="Login"
+              className="transition-transform hover:scale-110"
+            >
               <User className="w-6 h-6 text-gray-700 hover:text-gray-900 transition-colors" />
             </button>
           ) : (
             <div className="relative" ref={dropdownRef}>
-              <button onClick={() => setDropdownOpen((prev) => !prev)} className="p-1 rounded-full transition-transform hover:scale-110" aria-label="User Menu">
+              <button
+                onClick={() => setDropdownOpen((prev) => !prev)}
+                className="p-1 rounded-full transition-transform hover:scale-110"
+                aria-label="User Menu"
+              >
                 <User className="w-6 h-6 text-gray-700 hover:text-gray-900 transition-colors" />
               </button>
 
-              {/* Dropdown Menu */}
               {dropdownOpen && (
                 <div className="absolute right-0 mt-3 w-56 bg-white rounded-lg shadow-2xl ring-1 ring-black ring-opacity-10 z-50 transform origin-top-right animate-fade-in-up">
-                  <div className="py-2" role="menu" aria-orientation="vertical" aria-labelledby="user-menu">
+                  <div
+                    className="py-2"
+                    role="menu"
+                    aria-orientation="vertical"
+                    aria-labelledby="user-menu"
+                  >
                     <div className="px-4 py-3 text-sm text-gray-800 border-b border-gray-100 font-medium">
-                      <div className="truncate">{authState.user.email}</div>
+                      <div className="truncate">{authUser.email}</div>
                     </div>
-                    {authState.user.role === "admin" && (
+
+                    {authUser.role === "admin" && (
                       <button
                         onClick={() => {
                           navigate("/dashboard");
@@ -237,7 +280,8 @@ const Header = () => {
                         <LayoutDashboard size={18} /> Dashboard
                       </button>
                     )}
-                    {authState.user.role === "customer" && (
+
+                    {authUser.role === "customer" && (
                       <button
                         onClick={() => {
                           navigate("/my-orders");
@@ -248,6 +292,7 @@ const Header = () => {
                         <Package size={18} /> My Orders
                       </button>
                     )}
+
                     <button
                       onClick={handleLogout}
                       className="flex items-center gap-3 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -263,7 +308,11 @@ const Header = () => {
       </div>
 
       {/* Mobile Nav */}
-      <div className={`lg:hidden transition-all duration-500 ease-in-out ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`}>
+      <div
+        className={`lg:hidden transition-all duration-500 ease-in-out ${
+          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+        }`}
+      >
         <nav className="bg-gray-50 border-t border-gray-200 px-4 py-2 space-y-1">
           {categories.map((item) => (
             <button
@@ -283,7 +332,9 @@ const Header = () => {
           <div className="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl animate-scale-in">
             <h2 className="text-2xl font-bold mb-5 text-center">Login/Sign Up</h2>
             <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email address</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email address
+              </label>
               <input
                 id="email"
                 type="email"
@@ -323,9 +374,13 @@ const Header = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl animate-scale-in">
             <h2 className="text-2xl font-bold mb-5 text-center">Verify OTP</h2>
-            <p className="text-sm text-center text-gray-600 mb-4">An OTP has been sent to <span className="font-semibold">{email}</span></p>
+            <p className="text-sm text-center text-gray-600 mb-4">
+              An OTP has been sent to <span className="font-semibold">{email}</span>
+            </p>
             <div className="mb-4">
-              <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-1">Enter OTP</label>
+              <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-1">
+                Enter OTP
+              </label>
               <input
                 id="otp"
                 type="text"

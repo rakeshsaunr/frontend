@@ -1,22 +1,43 @@
 import React, { useState } from "react";
-import { useCart } from "../context/CartContext";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import namer from "color-namer";
 import {
   XCircle,
   PlusCircle,
   MinusCircle,
   ShoppingCart,
-  CheckCircle,
-  Truck,
-  MapPin,
-  CreditCard,
-  FileText,
   Loader2,
+  Truck,
 } from "lucide-react";
 
+// ColorNameConverter function
+const ColorNameConverter = (hex) => {
+  if (!hex) return "";
+  try {
+    return namer(hex).basic[0].name;
+  } catch {
+    return "";
+  }
+};
+
 export default function CartPage() {
-  const { cart, addToCart, removeFromCart, clearCart } = useCart();
+  // Redux is not working, so use localStorage for cart state
+  const [cart, setCart] = useState(() => {
+    try {
+      const stored = localStorage.getItem("cart");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Helper to update cart in state and localStorage
+  const updateCart = (newCart) => {
+    setCart(newCart);
+    localStorage.setItem("cart", JSON.stringify(newCart));
+  };
+
   const [showCheckout, setShowCheckout] = useState(false);
   const [shippingInfo, setShippingInfo] = useState({
     fullName: "",
@@ -45,20 +66,56 @@ export default function CartPage() {
 
   // --- Cart handlers ---
   const handleIncrement = (item) => {
-  if (item.quantity < (item.stock || 1)) {
-    // Correctly call addToCart to increase quantity by 1
-    addToCart(item, 1);
-  } else {
-    alert("No more stock available for this variant!");
-  }
-};
+    const idx = cart.findIndex(
+      (i) =>
+        i._id === item._id &&
+        i.size === item.size &&
+        i.color === item.color &&
+        i.sku === item.sku
+    );
+    if (idx !== -1) {
+      if (cart[idx].quantity < (cart[idx].stock || 1)) {
+        const newCart = [...cart];
+        newCart[idx] = { ...newCart[idx], quantity: newCart[idx].quantity + 1 };
+        updateCart(newCart);
+      } else {
+        alert("No more stock available for this variant!");
+      }
+    }
+  };
 
   const handleDecrement = (item) => {
-    removeFromCart(item._id, item.size, item.color, item.sku);
+    const idx = cart.findIndex(
+      (i) =>
+        i._id === item._id &&
+        i.size === item.size &&
+        i.color === item.color &&
+        i.sku === item.sku
+    );
+    if (idx !== -1) {
+      if (cart[idx].quantity > 1) {
+        const newCart = [...cart];
+        newCart[idx] = { ...newCart[idx], quantity: newCart[idx].quantity - 1 };
+        updateCart(newCart);
+      } else {
+        // Remove item if quantity goes to 0
+        const newCart = cart.filter((_, i) => i !== idx);
+        updateCart(newCart);
+      }
+    }
   };
 
   const handleRemove = (item) => {
-    removeFromCart(item._id, item.size, item.color, item.sku, true);
+    const newCart = cart.filter(
+      (i) =>
+        !(
+          i._id === item._id &&
+          i.size === item.size &&
+          i.color === item.color &&
+          i.sku === item.sku
+        )
+    );
+    updateCart(newCart);
   };
 
   const handleChange = (e) => {
@@ -94,7 +151,7 @@ export default function CartPage() {
       setLoading(false);
       setShowEmailPopup(false);
       setShowOtpPopup(true);
-    } catch (err) {
+    } catch {
       setLoading(false);
       alert("Failed to send OTP");
     }
@@ -128,7 +185,7 @@ export default function CartPage() {
 
       setShowOtpPopup(false);
       setShowCheckout(true);
-    } catch (err) {
+    } catch {
       setLoading(false);
       alert("Invalid OTP, try again");
     }
@@ -166,8 +223,6 @@ export default function CartPage() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      console.log("Order Response is:", orderRes);
 
       // Backend must return: { order, razorpayOrder, key }
       const { order, razorpayOrder, key } = orderRes.data;
@@ -219,7 +274,8 @@ export default function CartPage() {
 
             if (verifyRes.data && verifyRes.data.success) {
               alert("Payment Successful & Order Placed!");
-              clearCart();
+              // Clear cart in localStorage and state
+              updateCart([]);
               setShowCheckout(false);
             } else {
               console.error("Verify response:", verifyRes.data);
@@ -298,12 +354,12 @@ export default function CartPage() {
           {cart.map((item, idx) => (
             <div
               key={`${item._id}-${item.size}-${item.color}-${item.sku}-${idx}`}
-              className="flex flex-col sm:flex-row items-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300"
+              className="flex flex-col sm:flex-row items-center p-6 rounded-xl transition-all duration-300"
             >
               <img
                 src={item.image}
                 alt={item.name}
-                className="w-28 h-28 sm:w-32 sm:h-32 object-cover rounded-lg border border-gray-200"
+                className="w-36 h-36 sm:w-44 sm:h-44 object-contain"
               />
               <div className="flex-1 sm:ml-6 flex flex-col justify-center mt-4 sm:mt-0">
                 <div className="flex justify-between items-start w-full">
@@ -312,7 +368,17 @@ export default function CartPage() {
                     <p className="text-gray-600 mt-1">₹{item.price.toFixed(2)}</p>
                     <div className="text-sm text-gray-500 mt-2 space-y-1">
                       {item.size && <p>Size: {item.size}</p>}
-                      {item.color && <p>Color: {item.color}</p>}
+                      {item.color && (
+                        <div className="flex items-center gap-2">
+                          <span>Color:</span>
+                          <span
+                            className="w-4 h-4 rounded-full border border-gray-300 inline-block"
+                            style={{ backgroundColor: item.color }}
+                            title={item.color}
+                          ></span>
+                          <span>{ColorNameConverter(item.color) || item.color}</span>
+                        </div>
+                      )}
                       {item.sku && <p>SKU: {item.sku}</p>}
                     </div>
                   </div>
@@ -351,7 +417,7 @@ export default function CartPage() {
         </div>
 
         {/* Order Summary Section */}
-        <div className="lg:col-span-1 p-6 bg-white rounded-xl shadow-lg border border-gray-200 h-fit sticky top-4">
+        <div className="lg:col-span-1 p-6 rounded-xl h-fit sticky top-4">
           <h3 className="text-2xl font-bold text-gray-900 mb-6">Order Summary</h3>
           <div className="flex justify-between items-center mb-4 text-lg">
             <span className="text-gray-700">Subtotal ({cart.length} items):</span>
