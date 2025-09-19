@@ -28,6 +28,8 @@ import ReturnsExchanges from './Component/Policies/ReturnsExchanges';
 import ShipingPolicy from './Component/Policies/ShipingPolicy';
 import PrivacyPolicy from './Component/Policies/PrivacyPolicy';
 import CancelPolicy from './Component/Policies/CancelPolicy';
+import RefundPolicy from './Component/Policies/RefundPolicy';
+
 import CollectionPage from "./Component/CollectionPage";
 import AllProducts from './Component/collections/AllProducts';
 
@@ -41,6 +43,8 @@ import Career from './Component/Information/Career';
 import DashboardLayout from "./Component/pages/components/DashboardLayout";
 import Dashboard from "./Component/pages/Dashboard";
 import Reports from "./Component/pages/dashboard/Reports";
+// Corrected Calendar import
+import Calendar from "./Component/pages/dashboard/Calendar";
 import Settings from "./Component/pages/dashboard/Settings";
 import Category from "./Component/pages/dashboard/Category";
 import Product from "./Component/pages/dashboard/Product";
@@ -48,10 +52,8 @@ import Banners from "./Component/pages/dashboard/Banners";
 import Users from "./Component/pages/dashboard/Users";
 import Orders from "./Component/pages/dashboard/Orders";
 
-
 // Order page
 import MyOrders from "./pages/MyOrders";
-
 
 // 🔹 ProtectedRoute Component
 function ProtectedRoute({ element, role }) {
@@ -82,6 +84,7 @@ function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/cancel-policy" element={<CancelPolicy />} />
+              <Route path="/refund-policy" element={<RefundPolicy />} />
               <Route path="/return-exchange-request" element={<ReturnExchangeRequest />} />
               <Route path="/career" element={<Career />} />
 
@@ -124,6 +127,10 @@ function App() {
                 path="/dashboard/orders"
                 element={<ProtectedRoute role="admin" element={<DashboardLayout><Orders /></DashboardLayout>} />}
               />
+              <Route
+                path="/dashboard/calendar"
+                element={<ProtectedRoute role="admin" element={<DashboardLayout><Calendar /></DashboardLayout>} />}
+              />
 
               {/* Home */}
               <Route path="/" element={<Home />} />
@@ -143,6 +150,5 @@ function App() {
     </CartProvider>
   );
 }
-
 
 export default App;

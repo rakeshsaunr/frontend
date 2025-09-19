@@ -90,7 +90,7 @@ export default function CartPage() {
         return;
       }
       setLoading(true);
-      await axios.post("https://navdana.com/api/v1/user/send-otp", { email });
+      await axios.post("https://navdana-backend-2.onrender.com/api/v1/user/send-otp", { email });
       setLoading(false);
       setShowEmailPopup(false);
       setShowOtpPopup(true);
@@ -109,7 +109,7 @@ export default function CartPage() {
       setLoading(true);
 
       const res = await axios.post(
-        "https://navdana.com/api/v1/user/verify",
+        "https://navdana-backend-2.onrender.com/api/v1/user/verify",
         { name, email, otp, token: token || null },
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -160,7 +160,7 @@ export default function CartPage() {
       };
 
       const orderRes = await axios.post(
-        "https://navdana.com/api/v1/order",
+        "https://navdana-backend-2.onrender.com/api/v1/order",
         createOrderPayload,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -204,7 +204,7 @@ export default function CartPage() {
             setLoading(true);
             // 4) Verify payment on backend
             const verifyRes = await axios.post(
-              "https://navdana.com/api/v1/order/verify",
+              "https://navdana-backend-2.onrender.com/api/v1/order/verify",
               {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,

@@ -13,7 +13,7 @@ export default function SuitSet() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get(" https://navdana.com/api/v1/product");
+        const res = await axios.get(" https://navdana-backend-2.onrender.com/api/v1/product");
         if (res.data.success) {
           setProducts(res.data.data); 
           console.log("Data is:", res.data.data);

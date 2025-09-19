@@ -9,7 +9,7 @@ export default function Detailsprod() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await axios.get(` https://navdana.com/api/v1/product/${id}`);
+        const res = await axios.get(` https://navdana-backend-2.onrender.com/api/v1/product/${id}`);
         console.log("RESPONSE IS:",res)
         if (res.data.success) {
           setProduct(res.data.data);

@@ -16,55 +16,55 @@ export default function App() {
       image: "https://placehold.co/400x500/f0f0f0/666666?text=Image",
       title: "WHERE TO BUY KURTAS AND CO-ORD SETS ONLINE?",
       description: "Our kurtas are a go-to option for any occasion, be it a party, casual meet, festive occasion, or a wedding. We have our collection of Kurtas which is curated according to the latest trends in the fashion industry and is available for sale online as well as offline.",
-      link: " https://navdana.com/blog/where-to-buy-kurtas-and-co-ord-sets-online"
+      link: " https://navdana-backend-2.onrender.com/blog/where-to-buy-kurtas-and-co-ord-sets-online"
     },
     {
       image: "https://placehold.co/400x500/f0f0f0/666666?text=Image",
       title: "WHY ETHNIC DRESSES FOR LADIES ARE A MUST-HAVE FOR YOUR WARDROBE?",
       description: "Ethnic wear for women has always been a wardrobe staple. From formal events to casual gatherings, you'll find an ethnic wear dress for every occasion. This blog talks about the various ethnic dresses available for women, where to buy them, and how to style them.",
-      link: " https://navdana.com/blog/why-ethnic-dresses-for-ladies-are-a-must-have"
+      link: " https://navdana-backend-2.onrender.com/blog/why-ethnic-dresses-for-ladies-are-a-must-have"
     },
     {
       image: "https://placehold.co/400x500/f0f0f0/666666?text=Image",
       title: "TOP TRENDING CO-ORD SETS FOR WOMEN YOU SHOULD OWN IN 2023",
       description: "Co-ord sets are the new trend that is catching up among women. These are the latest trending outfits that can be worn for any occasion, from casual to formal. The sets are available in a variety of styles, colors, and fabrics. We will tell you about the trending co-ord sets.",
-      link: " https://navdana.com/blog/top-trending-co-ord-sets-for-women-2023"
+      link: " https://navdana-backend-2.onrender.com/blog/top-trending-co-ord-sets-for-women-2023"
     },
     {
       image: "https://placehold.co/400x500/f0f0f0/666666?text=Image",
       title: "BEST ANARKALI COTTON SUITS TO ADD TO YOUR WARDROBE",
       description: "Anarkali cotton suits are a timeless classic that can be styled for any occasion. From weddings to parties, these suits can be worn to almost every occasion. Anarkali suits have a long, flowing silhouette that flatters every body type. They come in a variety of designs and patterns, so you're sure to find a suit that you love.",
-      link: " https://navdana.com/blog/best-anarkali-cotton-suits"
+      link: " https://navdana-backend-2.onrender.com/blog/best-anarkali-cotton-suits"
     },
     {
       image: "https://placehold.co/400x500/f0f0f0/666666?text=Image",
       title: "CELEBRATE ONAM IN ELEGANCE WITH OUR LATEST KURTA SETS FOR WOMEN",
       description: "Are you looking for the latest kurta sets for women for Onam? We have curated a list of the latest kurta sets for women for Onam. These sets are available in various designs, colors, and fabrics, so you can easily find a set that you love.",
-      link: " https://navdana.com/blog/celebrate-onam-in-elegance-with-kurta-sets"
+      link: " https://navdana-backend-2.onrender.com/blog/celebrate-onam-in-elegance-with-kurta-sets"
     },
     {
       image: "https://placehold.co/400x500/f0f0f0/666666?text=Image",
       title: "WHY ETHNIC DRESSES ARE A PERFECT GIFT FOR ANY DAY PRESENT?",
       description: "A thoughtful gift can make anyone happy. If you're looking for a gift that is both stylish and meaningful, ethnic dresses for women are a great option. Ethnic dresses are a great way to show your loved ones that you care. They are available in a variety of styles, colors, and fabrics.",
-      link: " https://navdana.com/blog/why-ethnic-dresses-are-perfect-gift"
+      link: " https://navdana-backend-2.onrender.com/blog/why-ethnic-dresses-are-perfect-gift"
     },
     {
       image: "https://placehold.co/400x500/f0f0f0/666666?text=Image",
       title: "WHY CO-ORD SETS ARE THE PERFECT GIFT FOR ANY OCCASION?",
       description: "When it comes to gifting, there are many options to choose from. But if you're looking for a gift that is both stylish and versatile, co-ord sets are a great option. Co-ord sets are a great way to show your loved ones that you care. They are available in a variety of styles, colors, and fabrics.",
-      link: " https://navdana.com/blog/why-co-ord-sets-are-perfect-gift"
+      link: " https://navdana-backend-2.onrender.com/blog/why-co-ord-sets-are-perfect-gift"
     },
     {
       image: "https://placehold.co/400x500/f0f0f0/666666?text=Image",
       title: "UNIQUE RAKHI GIFTS IDEAS TO SURPRISE YOUR SISTER IN 2023",
       description: "Rakhi is a special occasion that celebrates the bond between a brother and sister. This year, surprise your sister with a unique Rakhi gift. We have curated a list of unique Rakhi gifts for your sister. These gifts are available in various designs, colors, and fabrics, so you can easily find a gift that you love.",
-      link: " https://navdana.com/blog/unique-rakhi-gift-ideas-2023"
+      link: " https://navdana-backend-2.onrender.com/blog/unique-rakhi-gift-ideas-2023"
     },
     {
       image: "https://placehold.co/400x500/f0f0f0/666666?text=Image",
       title: "HOW TO CHOOSE THE PERFECT ETHNIC DRESS FOR YOUR BODY SHAPE?",
       description: "Choosing the perfect ethnic dress for your body shape can be a challenge. But with the right tips, you can easily find a dress that flatters your body shape. We have curated a list of tips that will help you choose the perfect ethnic dress for your body shape. These tips are easy to follow and will help you find a dress that you love.",
-      link: " https://navdana.com/blog/how-to-choose-perfect-ethnic-dress-for-body-shape"
+      link: " https://navdana-backend-2.onrender.com/blog/how-to-choose-perfect-ethnic-dress-for-body-shape"
     },
   ];
 

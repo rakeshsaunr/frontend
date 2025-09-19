@@ -8,7 +8,7 @@ import { MdOutlineClose } from "react-icons/md";
 // Dynamic menu items array
 const menuItems = [
   {
-    to: "/dashboard/dashboard",
+    to: "/dashboard",
     label: "Dashboard",
     icon: <RxDashboard className="inline-block text-lg" />,
     className: "flex items-center space-x-2",
@@ -42,6 +42,11 @@ const menuItems = [
     to: "/dashboard/reports",
     label: "Reports",
     icon: <span role="img" aria-label="Reports">📊</span>,
+  },
+  {
+    to: "/dashboard/calendar",
+    label: "Calendar",
+    icon: <span role="img" aria-label="Calendar">🗓️</span>,
   },
   {
     to: "/dashboard/settings",

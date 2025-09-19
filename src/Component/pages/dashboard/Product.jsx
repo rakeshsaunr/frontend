@@ -12,8 +12,8 @@ const ColorNameConverter = (hex) => {
   }
 };
 
-const API_URL = "https://navdana.com/api/v1/product";
-const CATEGORY_API = "https://navdana.com/api/v1/category";
+const API_URL = "https://navdana-backend-2.onrender.com/api/v1/product";
+const CATEGORY_API = "https://navdana-backend-2.onrender.com/api/v1/category";
 
 // Default variant row
 const defaultVariantRow = () => ({

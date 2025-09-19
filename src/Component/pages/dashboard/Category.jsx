@@ -22,7 +22,7 @@ const Category = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("https://navdana.com/api/v1/category");
+      const res = await axios.get("https://navdana-backend-2.onrender.com/api/v1/category");
       let cats = res.data?.data || res.data || [];
       if (!Array.isArray(cats)) {
         if (Array.isArray(res.data?.categories)) {
@@ -86,7 +86,7 @@ const Category = () => {
       if (editingId) {
         // PUT request
         await axios.put(
-          `https://navdana.com/api/v1/category/${editingId}`,
+          `https://navdana-backend-2.onrender.com/api/v1/category/${editingId}`,
           dataToSend,
           config
         );
@@ -94,7 +94,7 @@ const Category = () => {
       } else {
         // POST request
         await axios.post(
-          "https://navdana.com/api/v1/category",
+          "https://navdana-backend-2.onrender.com/api/v1/category",
           dataToSend,
           config
         );
@@ -127,7 +127,7 @@ const Category = () => {
 
       try {
         await axios.delete(
-          `https://navdana.com/api/v1/category/${id}`,
+          `https://navdana-backend-2.onrender.com/api/v1/category/${id}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : "",

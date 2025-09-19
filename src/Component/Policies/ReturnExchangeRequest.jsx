@@ -29,93 +29,67 @@ const ReturnExchangeRequest = () => {
       </div>
 
       <h1 className="text-center mb-6 text-4xl md:text-5xl font-semibold text-[#2c1810] tracking-widest uppercase">
-        Return & Exchange Policy
+        Exchange Policy
       </h1>
       <h2 className="text-center font-normal text-xl md:text-2xl text-[#b48a78] mb-8 italic">
-        Hassle-free returns and exchanges for your peace of mind
+        Ensuring product accuracy and a smooth exchange experience
       </h2>
 
-      {/* Remove card format: no bg, shadow, rounded, or p-8 */}
       <section className="max-w-3xl mx-auto">
         <h3 className="text-2xl font-bold mb-4 text-[#8b5a3c] tracking-wide">
-          Our Promise
+          Product Accuracy and Quality Checks
         </h3>
         <p className="mb-4 text-gray-700">
-          We want you to love your purchase! If something isn’t right, our return and exchange process is simple and transparent.
+          At Navdana, we strive to make our product listings as accurate and detailed as possible. Every order goes through multiple quality checks before dispatch to ensure it reaches you in perfect condition.
         </p>
       </section>
 
       <section className="max-w-3xl mx-auto mt-8">
-        <h3 className="text-xl font-semibold mb-3 text-[#b48a78]">Key Points</h3>
+        <h3 className="text-xl font-semibold mb-3 text-[#b48a78]">Exchange Eligibility</h3>
         <ul className="list-disc list-inside space-y-3 text-gray-700 ml-4">
           <li>
-            <span className="font-medium">Returns & exchanges</span> accepted within <span className="text-[#8b5a3c] font-semibold">7 days</span> of delivery (except Luxe Collection).
+            <span className="font-medium">Domestic Orders Only:</span> Exchanges are available only for orders within India.
           </li>
           <li>
-            Refunds are issued as <span className="font-medium">store credit</span> valid for 1 year.<br />
-            <span className="text-xs text-gray-500">
-              Note: Store credit cannot be combined with other discount codes or offers.
-            </span>
+            <span className="font-medium">Condition:</span> Items must be unused, unwashed, and unworn. They should be returned with all original packaging and tags intact.
           </li>
           <li>
-            Only <span className="font-medium">one return/exchange</span> per order is allowed.
-          </li>
-          <li>
-            <span className="font-medium">Reverse pickup & logistics charges</span> of <span className="text-[#8b5a3c] font-semibold">₹150</span> are borne by the customer.
-          </li>
-          <li>
-            For exchanges, you may select a different size or product. If the new product is costlier, pay the difference; if it’s less, the balance is credited as store credit.
-          </li>
-          <li>
-            If your requested exchange size is unavailable, store credit will be issued.
-          </li>
-          <li>
-            Partial returns from deals (e.g., Buy 3@₹1299, return 1) will be recalculated as per the new deal (e.g., Buy 2@₹1299).
-          </li>
-          <li>
-            <span className="font-medium">No returns/exchanges</span> on special offers (deals, festive sales, BOGO) or Luxe Collection.
-          </li>
-          <li>
-            <span className="font-medium">Customized products</span> are not eligible for return or exchange.
-          </li>
-          <li>
-            <span className="font-medium">Prepaid orders</span> can be cancelled within 24 hours only. Refunds are processed after deducting payment gateway charges.
-          </li>
-          <li>
-            If damage or stains are due to customer misuse, returns are not accepted. Store credit (minus logistics charges) may be issued at our discretion.
+            <span className="font-medium">Exclusions:</span> We do not accept exchange requests for colour differences or fabric material variations.
           </li>
         </ul>
       </section>
 
       <section className="max-w-3xl mx-auto mt-10">
-        <h3 className="text-xl font-semibold mb-3 text-[#b48a78]">Eligibility Checklist</h3>
+        <h3 className="text-xl font-semibold mb-3 text-[#b48a78]">Exchange Process</h3>
         <ul className="list-disc list-inside space-y-3 text-gray-700 ml-4">
           <li>
-            Product must be unused, undamaged, and in original packaging with tags and invoice.
-          </li>
-          <li>
-            Take a photo of the product at the time of reverse pickup. Wrong product returns will not be accepted.
-          </li>
-          <li>
-            All returns go through a quality check (QC) process.
-          </li>
-          <li>
-            Processing takes 1-2 working days after receiving the product.
-          </li>
-          <li>
-            <span className="font-medium">To initiate a return/exchange:</span> Visit{" "}
+            <span className="font-medium">Request Submission:</span> Contact us within <span className="text-[#8b5a3c] font-semibold">24-48 hours</span> of delivery at{" "}
             <a
-              href="https://taperaro.com/apps/return_online"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="mailto:contact@navdana.com"
               className="text-[#8b5a3c] underline hover:text-[#b48a78]"
             >
-              this link
+              contact@navdana.com
             </a>{" "}
-            (effective 1st October 2023).<br />
-            <span className="text-xs text-gray-500">
-              *Return pickup is processed after credit approval.
-            </span>
+            or call{" "}
+            <a
+              href="tel:+919311120477"
+              className="text-[#8b5a3c] underline hover:text-[#b48a78]"
+            >
+              +91-9311120477
+            </a>
+            . Alternatively, submit your exchange request on our website.
+          </li>
+          <li>
+            <span className="font-medium">Processing Fee:</span> A processing fee of <span className="text-[#8b5a3c] font-semibold">INR 300</span> per product will be charged. Please share the payment screenshot via email.
+          </li>
+          <li>
+            <span className="font-medium">Direct Shipping (Optional):</span> If you prefer to send the product yourself, we will provide the shipping address. After dispatch, share the AWB number, courier company name, and POD with us. Please use a reliable courier service as Navdana will not be responsible for any loss during transit.
+          </li>
+          <li>
+            <span className="font-medium">Reverse Pickup:</span> Once payment is confirmed, our team will arrange a reverse pickup.
+          </li>
+          <li>
+            <span className="font-medium">Quality Inspection and Dispatch:</span> After receiving and inspecting the returned product, we will dispatch the requested size within <span className="text-[#8b5a3c] font-semibold">10-15 working days</span>. Only one exchange per order is allowed. If the requested size is unavailable, a credit note will be issued for the total amount of the item(s), valid for 30 days.
           </li>
         </ul>
       </section>

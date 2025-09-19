@@ -18,7 +18,7 @@ const CancelPolicy = () => {
       }}
     >
       <h1 className="text-center mb-6 text-4xl md:text-5xl font-semibold text-[#2c1810] tracking-widest">
-        Cancellation Policy
+        CANCELLATION POLICY
       </h1>
       <div className="text-center text-sm text-gray-500 mb-8">
         <em>Last updated: August 29, 2025</em>
@@ -28,44 +28,55 @@ const CancelPolicy = () => {
         <ol className="list-decimal ml-7 space-y-7 text-base md:text-lg">
           <li>
             <span className="font-bold text-[#8b5a3c]">Customer Cancellations</span>
-            <ul className="list-disc ml-6 mt-2 text-gray-700 space-y-1">
-              <li>Can cancel within 24 hours of placing an order.</li>
-              <li>Prepaid refunds processed within 10–15 business days.</li>
+            <ul className="list-disc ml-6 mt-2 text-gray-700 space-y-2">
+              <li>
+                <span className="font-semibold">Prepaid and COD Orders:</span> Orders can be cancelled within 24 hours of placement. For prepaid orders, a payment gateway deduction of 2-3% will apply. Customers may choose to receive a credit note or replace the item with another product of equal value.
+              </li>
+              <li>
+                <span className="font-semibold">Request Method:</span> Email us at{" "}
+                <a
+                  href="mailto:contact@navdana.com"
+                  className="text-[#b48a78] underline hover:text-[#8b5a3c]"
+                >
+                  contact@navdana.com
+                </a>{" "}
+                or call{" "}
+                <a
+                  href="tel:+919311120477"
+                  className="text-[#b48a78] underline hover:text-[#8b5a3c]"
+                >
+                  +91-9311120477
+                </a>
+                .
+              </li>
             </ul>
           </li>
           <li>
-            <span className="font-bold text-[#8b5a3c]">NAVDANA Cancellations</span>
-            <ul className="list-disc ml-6 mt-2 text-gray-700 space-y-1">
-              <li>May occur due to stock, payment, or pricing errors.</li>
-              <li>Refunds issued within 10–15 business days.</li>
+            <span className="font-bold text-[#8b5a3c]">Navdana Cancellations</span>
+            <ul className="list-disc ml-6 mt-2 text-gray-700 space-y-2">
+              <li>
+                <span className="font-semibold">Reasons:</span> Orders may be cancelled due to unavailability of materials, incorrect listings, or suspected fraudulent activities.
+              </li>
+              <li>
+                <span className="font-semibold">Refunds:</span> For prepaid orders cancelled by us, the full amount will be refunded to the registered bank account. Customers will be notified via email.
+              </li>
             </ul>
           </li>
           <li>
-            <span className="font-bold text-[#8b5a3c]">Non-Cancellable Orders</span>
-            <ul className="list-disc ml-6 mt-2 text-gray-700 space-y-1">
-              <li>Once dispatched, orders cannot be cancelled.</li>
-              <li>Sale items are non-cancellable.</li>
+            <span className="font-bold text-[#8b5a3c]">Cancellation Charges</span>
+            <ul className="list-disc ml-6 mt-2 text-gray-700 space-y-2">
+              <li>
+                Cancellations after placing prepaid orders will incur a 2-3% deduction (payment gateway fees).
+              </li>
             </ul>
           </li>
           <li>
-            <span className="font-bold text-[#8b5a3c]">Contact Us</span>
-            <div className="ml-1 mt-2 text-gray-700">
-              Email:{" "}
-              <a
-                href="mailto:support@navdana.in"
-                className="text-[#b48a78] underline hover:text-[#8b5a3c]"
-              >
-                support@navdana.in
-              </a>
-              {" "} | {" "}
-              Phone:{" "}
-              <a
-                href="tel:+919311120477"
-                className="text-[#b48a78] underline hover:text-[#8b5a3c]"
-              >
-                +91-9311120477
-              </a>
-            </div>
+            <span className="font-bold text-[#8b5a3c]">Credit Note Validity</span>
+            <ul className="list-disc ml-6 mt-2 text-gray-700 space-y-2">
+              <li>
+                Credit notes issued for cancellations or exchanges are valid for 30 days.
+              </li>
+            </ul>
           </li>
         </ol>
       </div>

@@ -16,7 +16,7 @@ export default function Collection() {
   useEffect(() => {
     const fetchCollections = async () => {
       try {
-        const response = await axios.get("https://navdana.com/api/v1/category");
+        const response = await axios.get("https://navdana-backend-2.onrender.com/api/v1/category");
         setCollections(Array.isArray(response.data.categories) ? response.data.categories : []);
       } catch (error) {
         console.error("Error fetching collections:", error);

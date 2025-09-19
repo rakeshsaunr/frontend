@@ -1,372 +1,365 @@
-// src/pages/Banners.jsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_URL = "https://navdana.com/api/v1/banner";
+const API_URL = "https://navdana-backend-2.onrender.com/api/v1/banner";
+
+// Helper to get token from localStorage (or wherever you store it)
+const getToken = () => {
+  return localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+};
+
+const defaultForm = {
+  title: "",
+  url: null,
+  isActive: true,
+};
 
 const Banners = () => {
   const [banners, setBanners] = useState([]);
-  const [formData, setFormData] = useState({
-    title: "",
-    isActive: true,
-  });
-  const [imageFile, setImageFile] = useState(null);
-  const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [formError, setFormError] = useState("");
+  const [form, setForm] = useState(defaultForm);
+  const [preview, setPreview] = useState(null);
+  const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     fetchBanners();
-    // eslint-disable-next-line
   }, []);
 
   const fetchBanners = async () => {
     setLoading(true);
-    setFormError("");
+    setError("");
     try {
-      const res = await axios.get(API_URL);
-      let bannersData = res.data?.data || res.data || [];
-      if (!Array.isArray(bannersData)) {
-        if (Array.isArray(res.data?.banners)) {
-          bannersData = res.data.banners;
-        } else {
-          bannersData = [];
-        }
-      }
-      setBanners(bannersData);
-    } catch (error) {
-      setFormError(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Error fetching banners"
+      const res = await axios.get(API_URL, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+        withCredentials: true,
+      });
+      setBanners(res.data?.data || []);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Failed to fetch banners"
       );
-      setBanners([]);
-      console.error("Error fetching banners:", error);
     }
     setLoading(false);
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked, files } = e.target;
-    if (name === "image" && type === "file") {
-      setImageFile(files[0]);
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setForm((prev) => ({
+      ...prev,
+      url: file,
+    }));
+    if (file) {
+      setPreview(URL.createObjectURL(file));
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: type === "checkbox" ? checked : value,
-      }));
+      setPreview(null);
     }
   };
 
+  const resetForm = () => {
+    setForm(defaultForm);
+    setPreview(null);
+    setError("");
+    setSuccessMsg("");
+    setShowForm(false);
+  };
+
+  // Add Banner (POST) - token is included in headers
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError("");
+    setError("");
     setSuccessMsg("");
+    if (!form.title || !form.url) {
+      setError("Title and image are required.");
+      return;
+    }
     setLoading(true);
+    const formData = new FormData();
+    formData.append("title", form.title);
+    formData.append("isActive", form.isActive);
+    formData.append("url", form.url);
+
     try {
-      let dataToSend = new FormData();
-      dataToSend.append("title", formData.title);
-      dataToSend.append("isActive", formData.isActive);
-
-      if (imageFile) {
-        dataToSend.append("image", imageFile);
-      }
-
-      if (editingId) {
-        await axios.put(
-          `${API_URL}/${editingId}`,
-          dataToSend,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-        setSuccessMsg("Banner updated successfully!");
-      } else {
-        if (!imageFile) {
-          setFormError("Please select an image for the banner.");
-          setLoading(false);
-          return;
-        }
-        await axios.post(
-          API_URL,
-          dataToSend,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-        setSuccessMsg("Banner added successfully!");
-      }
-      setFormData({ title: "", isActive: true });
-      setImageFile(null);
-      setEditingId(null);
+      await axios.post(`${API_URL}/upload`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        withCredentials: true,
+      });
+      setSuccessMsg("Banner added successfully!");
+      resetForm();
       fetchBanners();
-    } catch (error) {
-      setFormError(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Error saving banner"
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          (err.response?.data?.error === "Token missing"
+            ? "Token missing. Please login again."
+            : "Failed to upload banner. Title must be unique.")
       );
-      console.error("Error saving banner:", error);
     }
     setLoading(false);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this banner?")) {
-      setFormError("");
-      setSuccessMsg("");
-      setLoading(true);
-      try {
-        await axios.delete(`${API_URL}/${id}`);
-        setSuccessMsg("Banner deleted successfully!");
-        fetchBanners();
-      } catch (error) {
-        setFormError(
-          error?.response?.data?.message ||
-          error?.message ||
-          "Error deleting banner"
-        );
-        console.error("Error deleting banner:", error);
-      }
-      setLoading(false);
+  // Delete Banner (DELETE) - token is included in headers
+  const handleDelete = async (bannerId) => {
+    if (!window.confirm("Are you sure you want to delete this banner?")) return;
+    setLoading(true);
+    setError("");
+    setSuccessMsg("");
+    try {
+      await axios.delete(`${API_URL}/${bannerId}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+        withCredentials: true,
+      });
+      setSuccessMsg("Banner deleted successfully!");
+      fetchBanners();
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          (err.response?.data?.error === "Token missing"
+            ? "Token missing. Please login again."
+            : "Failed to delete banner.")
+      );
     }
+    setLoading(false);
   };
 
-  const handleEdit = (banner) => {
-    setFormData({
-      title: banner.title || "",
-      isActive: banner.isActive !== undefined ? banner.isActive : true,
-    });
-    setImageFile(null);
-    setEditingId(banner._id);
-    setFormError("");
+  // Update Banner (PUT) - token is included in headers
+  // Example: Toggle isActive status
+  const handleToggleActive = async (banner) => {
+    setLoading(true);
+    setError("");
     setSuccessMsg("");
+    try {
+      await axios.put(
+        `${API_URL}/${banner._id}`,
+        { isActive: !banner.isActive },
+        {
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+      setSuccessMsg("Banner status updated!");
+      fetchBanners();
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          (err.response?.data?.error === "Token missing"
+            ? "Token missing. Please login again."
+            : "Failed to update banner.")
+      );
+    }
+    setLoading(false);
   };
 
-  const handleCancelEdit = () => {
-    setFormData({ title: "", isActive: true });
-    setImageFile(null);
-    setEditingId(null);
-    setFormError("");
-    setSuccessMsg("");
-  };
-
-  const safeBanners = Array.isArray(banners) ? banners : [];
-
+  // UI similar to Product.jsx: form in a card, table for banners, add button, etc.
   return (
-    <div className="p-0 m-0 w-full min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen bg-gradient-to-br from-blue-50 to-pink-50 p-0 m-0">
       <div className="w-full px-2 sm:px-4 md:px-8 py-8">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-gray-800 text-center tracking-tight w-full">Manage Banners</h2>
-
-        {/* Alerts */}
-        {formError && (
-          <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-2 mb-4 rounded text-sm text-center">
-            {formError}
-          </div>
-        )}
-        {successMsg && (
-          <div className="bg-green-100 border border-green-300 text-green-700 px-4 py-2 mb-4 rounded text-sm text-center">
-            {successMsg}
-          </div>
-        )}
-
-        {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4"
-          encType="multipart/form-data"
-        >
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1 w-full">
-              <label className="font-medium text-gray-700 mb-1 text-sm sm:text-base" htmlFor="cat-name">Banner Title</label>
-              <input
-                type="text"
-                name="title"
-                placeholder="Banner Title"
-                value={formData.title}
-                onChange={handleChange}
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 p-2 rounded text-sm transition"
-                required
-              />
-            </div>
-            <div className="flex flex-col gap-1 w-full">
-              <label className="font-medium text-gray-700 mb-1 text-sm sm:text-base" htmlFor="cat-image">Image</label>
-              <input
-                type="file"
-                name="image"
-                accept="image/*"
-                onChange={handleChange}
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 p-2 rounded text-sm transition file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700"
-                required={!editingId}
-              />
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm select-none">Active</label>
-              <input
-                type="checkbox"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={handleChange}
-                className="accent-blue-600"
-              />
-            </div>
-          </div>
-          {/* Move Add Banner button and Cancel button below the form fields */}
-          <div className="flex flex-col gap-2 col-span-1 md:col-span-2 mt-2 w-full">
-            <div className="flex gap-2 flex-wrap">
+        <h2 className="text-3xl font-bold mb-8 text-blue-900 text-center tracking-tight w-full drop-shadow">
+          Banners Management
+        </h2>
+        {showForm ? (
+          <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-2xl p-8 mb-10 border border-blue-100">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-semibold text-blue-800">Add New Banner</h3>
               <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 transition text-white px-5 py-2 rounded text-sm font-semibold shadow disabled:opacity-60"
+                type="button"
+                className="bg-gradient-to-r from-orange-400 to-orange-500 text-white font-bold px-4 py-1 rounded-xl shadow-lg hover:from-orange-500 hover:to-orange-600 active:scale-95 transition-all duration-200 ease-in-out"
+                onClick={resetForm}
                 disabled={loading}
               >
-                {editingId
-                  ? loading
-                    ? "Updating..."
-                    : "Update Banner"
-                  : loading
-                  ? "Adding..."
-                  : "Add Banner"}
+                Cancel
               </button>
-              {editingId && (
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">Title</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={form.title}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition shadow-sm bg-blue-50/50"
+                  required
+                  placeholder="Banner title"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="w-full"
+                  required
+                />
+                {preview && (
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="mt-3 h-28 object-contain rounded-xl border border-blue-100 shadow"
+                  />
+                )}
+              </div>
+              <div className="flex items-center mt-2">
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={form.isActive}
+                  onChange={handleInputChange}
+                  id="isActive"
+                  className="mr-3 accent-blue-600 w-5 h-5 rounded focus:ring-2 focus:ring-blue-400"
+                />
+                <label htmlFor="isActive" className="text-gray-700 font-semibold select-none">Active</label>
+              </div>
+              {error && (
+                <div className="text-red-600 text-sm">{error}</div>
+              )}
+              {successMsg && (
+                <div className="text-green-600 text-sm">{successMsg}</div>
+              )}
+              <div className="flex justify-end">
                 <button
-                  type="button"
-                  className="bg-gray-400 hover:bg-gray-500 transition text-white px-5 py-2 rounded text-sm font-semibold shadow"
-                  onClick={handleCancelEdit}
+                  type="submit"
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold px-6 py-2 rounded-xl shadow-lg transition-all duration-200 ease-in-out active:scale-95 flex items-center gap-2"
                   disabled={loading}
                 >
-                  Cancel
+                  {loading ? (
+                    <>
+                      <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M4 12a8 8 0 018-8" strokeOpacity="0.75" strokeLinecap="round"/></svg>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>
+                      Add Banner
+                    </>
+                  )}
                 </button>
-              )}
-            </div>
-          </div>
-        </form>
-
-        {/* Mobile Card List */}
-        <div className="block md:hidden">
-          {safeBanners.length === 0 && (
-            <div className="text-center p-4 text-gray-500">
-              {loading ? "Loading..." : "No banners found"}
-            </div>
-          )}
-          <div className="space-y-4">
-            {safeBanners.map((banner) => (
-              <div
-                key={banner._id}
-                className="bg-white rounded-lg shadow border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center gap-4"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-24 h-16 flex items-center justify-center bg-gray-100 rounded overflow-hidden border border-gray-200">
-                    {banner.url ? (
-                      <img
-                        src={banner.url}
-                        alt={banner.title}
-                        className="object-contain h-16 w-24"
-                      />
-                    ) : (
-                      <span className="text-gray-400 text-xs">No Image</span>
-                    )}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-base">{banner.title}</div>
-                    <div className="mt-1">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                          banner.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {banner.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-3 sm:mt-0 sm:ml-auto">
-                  <button
-                    onClick={() => handleEdit(banner)}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-1.5 rounded font-medium shadow transition-colors duration-150 disabled:opacity-60 text-xs"
-                    disabled={loading}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(banner._id)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded font-medium shadow transition-colors duration-150 disabled:opacity-60 text-xs"
-                    disabled={loading}
-                  >
-                    Delete
-                  </button>
-                </div>
               </div>
-            ))}
+            </form>
           </div>
-        </div>
+        ) : (
+          <div className="flex justify-end mb-6">
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold px-6 py-2 rounded-xl shadow-lg transition-all duration-200 ease-in-out active:scale-95 flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>
+              Add Banner
+            </button>
+          </div>
+        )}
 
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto w-full">
-          <table className="w-full border border-gray-200 rounded-lg overflow-hidden shadow bg-white text-sm">
+        <div className="bg-gradient-to-br from-blue-50 to-pink-50 shadow-2xl rounded-2xl overflow-x-auto border border-blue-100 p-4 mt-8">
+          <table className="w-full border-separate border-spacing-y-2 text-[15px]">
             <thead>
-              <tr className="bg-blue-50 text-blue-900">
-                <th className="border-b px-6 py-3 text-left font-semibold">Title</th>
-                <th className="border-b px-6 py-3 text-left font-semibold">Image</th>
-                <th className="border-b px-6 py-3 text-left font-semibold">Active</th>
-                <th className="border-b px-6 py-3 text-left font-semibold">Actions</th>
+              <tr>
+                <th className="px-5 py-3 text-left font-semibold text-blue-900 bg-blue-100 rounded-tl-xl">Image</th>
+                <th className="px-5 py-3 text-left font-semibold text-blue-900 bg-blue-100">Title</th>
+                <th className="px-5 py-3 text-left font-semibold text-blue-900 bg-blue-100">Active</th>
+                <th className="px-5 py-3 text-left font-semibold text-blue-900 bg-blue-100 rounded-tr-xl">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {safeBanners.map((banner, idx) => (
-                <tr
-                  key={banner._id}
-                  className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                >
-                  <td className="border-b px-6 py-3">{banner.title}</td>
-                  <td className="border-b px-6 py-3">
-                    {banner.url ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="4" className="text-center text-gray-500 py-8 bg-white rounded-b-xl">
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5 text-blue-400" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Loading banners...
+                    </span>
+                  </td>
+                </tr>
+              ) : banners.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="text-center text-gray-500 py-8 bg-white rounded-b-xl">
+                    No banners found.
+                  </td>
+                </tr>
+              ) : (
+                banners.map((banner, idx) => (
+                  <tr
+                    key={banner._id}
+                    className={`transition-all duration-200 bg-white hover:shadow-lg hover:scale-[1.01] group ${
+                      idx % 2 === 0 ? "bg-white" : "bg-blue-50"
+                    }`}
+                  >
+                    <td className="px-5 py-3 rounded-l-xl border-y border-blue-100 group-hover:bg-blue-50 transition">
                       <img
                         src={banner.url}
                         alt={banner.title}
-                        className="h-16 w-28 object-contain border border-gray-200 rounded shadow"
+                        className="h-16 w-32 object-contain rounded shadow border border-blue-100"
                       />
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="border-b px-6 py-3">
-                    <span
-                      className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                        banner.isActive
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {banner.isActive ? "Yes" : "No"}
-                    </span>
-                  </td>
-                  <td className="border-b px-6 py-3 space-x-2">
-                    <button
-                      onClick={() => handleEdit(banner)}
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-1.5 rounded font-medium shadow transition-colors duration-150 disabled:opacity-60"
-                      disabled={loading}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(banner._id)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded font-medium shadow transition-colors duration-150 disabled:opacity-60"
-                      disabled={loading}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {safeBanners.length === 0 && (
-                <tr>
-                  <td colSpan="4" className="text-center p-6 text-gray-500">
-                    {loading ? "Loading..." : "No banners found"}
-                  </td>
-                </tr>
+                    </td>
+                    <td className="px-5 py-3 border-y border-blue-100 group-hover:bg-blue-50 transition font-semibold text-gray-800">
+                      {banner.title}
+                    </td>
+                    <td className="px-5 py-3 border-y border-blue-100 group-hover:bg-blue-50 transition">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold shadow ${
+                          banner.isActive
+                            ? "bg-green-100 text-green-700 border border-green-200"
+                            : "bg-red-100 text-red-700 border border-red-200"
+                        }`}
+                      >
+                        {banner.isActive ? "Yes" : "No"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 rounded-r-xl border-y border-blue-100 group-hover:bg-blue-50 transition">
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          onClick={() => handleToggleActive(banner)}
+                          className={`bg-gradient-to-r ${
+                            banner.isActive
+                              ? "from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600"
+                              : "from-green-400 to-green-500 hover:from-green-500 hover:to-green-600"
+                          } text-white px-2 py-1 rounded-lg shadow font-semibold transition-all duration-150 active:scale-95 flex items-center justify-center`}
+                          title={banner.isActive ? "Edit" : "Activate"}
+                          disabled={loading}
+                        >
+                          {banner.isActive ? (
+                            <span className="material-icons align-middle text-base mr-1 text-center"></span>
+                          ) : (
+                            <span className="material-icons align-middle text-base mr-1">check_circle</span>
+                          )}
+                          <span className="w-full text-center">{banner.isActive ? "Edit" : "Activate"}</span>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(banner._id)}
+                          className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-2 py-1 rounded-lg shadow font-semibold transition-all duration-150 active:scale-95 flex items-center justify-center"
+                          title="Delete"
+                          disabled={loading}
+                        >
+                          <span className="material-icons align-middle text-base mr-1 text-center">Delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

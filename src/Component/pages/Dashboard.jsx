@@ -31,9 +31,9 @@ export default function Dashboard() {
       try {
         // Example API endpoints, replace with your actual endpoints
         const [statsRes, chartRes, ordersRes] = await Promise.all([
-          axios.get("https://navdana.com/api/v1/dashboard/stats"),
-          axios.get("https://navdana.com/api/v1/dashboard/user-growth"),
-          axios.get("https://navdana.com/api/v1/order?limit=5&sort=-createdAt"),
+          axios.get("https://navdana-backend-2.onrender.com/api/v1/dashboard/stats"),
+          axios.get("https://navdana-backend-2.onrender.com/api/v1/dashboard/user-growth"),
+          axios.get("https://navdana-backend-2.onrender.com/api/v1/order?limit=5&sort=-createdAt"),
         ]);
         setStats({
           totalUsers: statsRes.data?.totalUsers ?? 0,
@@ -42,7 +42,7 @@ export default function Dashboard() {
         });
         setChartData(chartRes.data?.data || []);
         setOrders(ordersRes.data?.data || []);
-      } catch (error) {
+      } catch {
         setErr("Failed to load dashboard data.");
         setStats({ totalUsers: 0, revenue: 0, orders: 0 });
         setChartData([]);

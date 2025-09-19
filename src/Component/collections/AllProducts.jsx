@@ -14,7 +14,7 @@ export default function AllProducts() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch(" https://navdana.com/api/v1/product");
+        const res = await fetch(" https://navdana-backend-2.onrender.com/api/v1/product");
         const data = await res.json();
         if (data.success && Array.isArray(data.data)) {
           setProducts(data.data);

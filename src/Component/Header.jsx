@@ -47,7 +47,7 @@ const Header = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("https://navdana.com/api/v1/category");
+        const response = await axios.get("https://navdana-backend-2.onrender.com/api/v1/category");
         if (Array.isArray(response.data.categories)) {
           const activeCategories = response.data.categories.filter(
             (cat) => cat.isActive && cat.name !== "All Products"
@@ -101,7 +101,7 @@ const Header = () => {
     }
     try {
       setLoading(true);
-      await axios.post("https://navdana.com/api/v1/user/send-otp", { email });
+      await axios.post("https://navdana-backend-2.onrender.com/api/v1/user/send-otp", { email });
       setLoading(false);
       setShowEmailPopup(false);
       setShowOtpPopup(true);
@@ -119,7 +119,7 @@ const Header = () => {
     try {
       setLoading(true);
       const res = await axios.post(
-        "https://navdana.com/api/v1/user/verify",
+        "https://navdana-backend-2.onrender.com/api/v1/user/verify",
         { email, otp },
         {
           withCredentials: true,

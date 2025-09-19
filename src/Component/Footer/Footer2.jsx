@@ -29,7 +29,7 @@ const Footer = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const res = await axios.get("https://navdana.com/api/v1/category");
+                const res = await axios.get("https://navdana-backend-2.onrender.com/api/v1/category");
                 if (Array.isArray(res.data.categories)) {
                     const activeCategories = res.data.categories.filter(
                         (cat) => cat.isActive && cat.name !== "All Products"
@@ -215,6 +215,7 @@ const Footer = () => {
                                 <li><Link to="/privacy-policy" className="animated-list-item block">Privacy Policy</Link></li>
                                 <li><Link to="/returns-exchanges" className="animated-list-item block">Return & Exchange Policy</Link></li>
                                 <li><Link to="/cancel-policy" className="animated-list-item block">Cancellation Policy</Link></li>
+                                <li><Link to="/refund-policy" className="animated-list-item block">Refund Policy</Link></li>
                             </ul>
                         </div>
 

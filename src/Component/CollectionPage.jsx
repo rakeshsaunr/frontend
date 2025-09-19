@@ -16,7 +16,7 @@ export default function CollectionPage() {
   const [loading, setLoading] = useState(true);
   const [categoryName, setCategoryName] = useState("");
 
-  const API_PRODUCT = `https://navdana.com/api/v1/product/category/${id}`;
+  const API_PRODUCT = `https://navdana-backend-2.onrender.com/api/v1/product/category/${id}`;
 
   useEffect(() => {
     const fetchProducts = async () => {
