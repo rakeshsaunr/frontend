@@ -5,8 +5,8 @@ import { LuEye } from "react-icons/lu";
 export default function App() {
   // Replace these with your actual Instagram credentials
   // NOTE: In a production app, you should not hardcode these.
-  const DEMO_USER_ID = "17841476089772806";
-  const DEMO_ACCESS_TOKEN = "IGAAhRZCVkZCeY9BZAE5XTERRcXVKNW1Dd0tQTjZAxZA0I1c1ktM3o4X0l3d2VMODVYZAmo5ZAWhFTEFWZAXl5N3o4RWVyeWNOUUpFNnhjajAtOXJyT1g5b1dxaFVWNjdwZAHJQaHZAZAMDRJa2pSTUZAIaHhyZA3R3RkNoSUJ2NVlvVVd2TFViawZDZD";
+  const DEMO_USER_ID = "";
+  const DEMO_ACCESS_TOKEN = "";
 
   return (
     <div className="min-h-screen overflow-x-hidden">
