@@ -1,4 +1,3 @@
-// src/components/Header.jsx
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
@@ -13,48 +12,48 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "/logo.png";
+import { useCart } from "../context/CartContext";
 
-// redux
+// Redux imports
 import { useSelector, useDispatch } from "react-redux";
-import { setAuth, clearAuth } from "../app/authSlice"; // example action names
-// if you used different names, update these imports
-// cart selector from cart slice
-// (we'll read state.cart.items directly below)
+import {
+  setUser,
+  setToken,
+  clearAuth,
+} from "../app/authSlice"; // You need to create this slice
+import { setCategories as setCategoriesRedux } from "../app/categorySlice"; // You need to create this slice
 
 const Header = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  // Redux-driven state (cart + auth)
-  const cart = useSelector((state) => state.cart?.items || []);
-  const authUser = useSelector((state) => state.auth?.user || null);
-  // Removed unused variable 'authToken'
-
-  // local UI state
   const [isOpen, setIsOpen] = useState(false);
-  const [categories, setCategories] = useState([]);
   const [showEmailPopup, setShowEmailPopup] = useState(false);
   const [showOtpPopup, setShowOtpPopup] = useState(false);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // on mount: hydrate auth from localStorage into redux (safe if slices not initialized)
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Redux state
+  const authState = useSelector((state) => state.auth);
+  const categories = useSelector((state) => state.category.categories);
+  const { cart } = useCart();
+
+  // On mount, sync Redux auth state with localStorage
   useEffect(() => {
-    try {
-      const storedUser = JSON.parse(localStorage.getItem("user"));
-      const storedToken = localStorage.getItem("token");
-      if (storedUser || storedToken) {
-        dispatch(setAuth({ user: storedUser, token: storedToken }));
-      }
-    } catch {
-      // ignore parse errors
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const storedToken = localStorage.getItem("token");
+    if (storedUser && storedToken) {
+      dispatch(setUser(storedUser));
+      dispatch(setToken(storedToken));
     }
   }, [dispatch]);
 
+  // Fetch categories and store in Redux
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -69,14 +68,14 @@ const Header = () => {
             { _id: "all-products", name: "All Products" },
             ...activeCategories,
           ];
-          setCategories(finalCategories);
+          dispatch(setCategoriesRedux(finalCategories));
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
       }
     };
     fetchCategories();
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -85,7 +84,8 @@ const Header = () => {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleLogoClick = () => {
@@ -144,12 +144,11 @@ const Header = () => {
       setLoading(false);
 
       const { user: loggedInUser, token: authToken } = res.data;
-      // persist to localStorage
       localStorage.setItem("user", JSON.stringify(loggedInUser));
       localStorage.setItem("token", authToken);
 
-      // push into redux
-      dispatch(setAuth({ user: loggedInUser, token: authToken }));
+      dispatch(setUser(loggedInUser));
+      dispatch(setToken(authToken));
 
       setShowOtpPopup(false);
       setEmail("");
@@ -216,6 +215,7 @@ const Header = () => {
 
         {/* Right Section: Icons */}
         <div className="flex items-center space-x-6 animate-fade-in-right">
+          {/* Search */}
           <button
             onClick={() => navigate("/coming-soon")}
             aria-label="Search"
@@ -239,7 +239,7 @@ const Header = () => {
           </div>
 
           {/* User / Login */}
-          {!authUser ? (
+          {!authState.user ? (
             <button
               onClick={openLoginPopup}
               aria-label="Login"
@@ -257,6 +257,7 @@ const Header = () => {
                 <User className="w-6 h-6 text-gray-700 hover:text-gray-900 transition-colors" />
               </button>
 
+              {/* Dropdown Menu */}
               {dropdownOpen && (
                 <div className="absolute right-0 mt-3 w-56 bg-white rounded-lg shadow-2xl ring-1 ring-black ring-opacity-10 z-50 transform origin-top-right animate-fade-in-up">
                   <div
@@ -266,10 +267,9 @@ const Header = () => {
                     aria-labelledby="user-menu"
                   >
                     <div className="px-4 py-3 text-sm text-gray-800 border-b border-gray-100 font-medium">
-                      <div className="truncate">{authUser.email}</div>
+                      <div className="truncate">{authState.user.email}</div>
                     </div>
-
-                    {authUser.role === "admin" && (
+                    {authState.user.role === "admin" && (
                       <button
                         onClick={() => {
                           navigate("/dashboard");
@@ -280,8 +280,7 @@ const Header = () => {
                         <LayoutDashboard size={18} /> Dashboard
                       </button>
                     )}
-
-                    {authUser.role === "customer" && (
+                    {authState.user.role === "customer" && (
                       <button
                         onClick={() => {
                           navigate("/my-orders");
@@ -292,7 +291,6 @@ const Header = () => {
                         <Package size={18} /> My Orders
                       </button>
                     )}
-
                     <button
                       onClick={handleLogout}
                       className="flex items-center gap-3 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -330,9 +328,14 @@ const Header = () => {
       {showEmailPopup && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl animate-scale-in">
-            <h2 className="text-2xl font-bold mb-5 text-center">Login/Sign Up</h2>
+            <h2 className="text-2xl font-bold mb-5 text-center">
+              Login/Sign Up
+            </h2>
             <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Email address
               </label>
               <input
@@ -356,9 +359,25 @@ const Header = () => {
                 className="px-6 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center"
               >
                 {loading ? (
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                 ) : (
                   "Send OTP"
@@ -375,10 +394,14 @@ const Header = () => {
           <div className="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl animate-scale-in">
             <h2 className="text-2xl font-bold mb-5 text-center">Verify OTP</h2>
             <p className="text-sm text-center text-gray-600 mb-4">
-              An OTP has been sent to <span className="font-semibold">{email}</span>
+              An OTP has been sent to{" "}
+              <span className="font-semibold">{email}</span>
             </p>
             <div className="mb-4">
-              <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="otp"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Enter OTP
               </label>
               <input
@@ -403,9 +426,25 @@ const Header = () => {
                 className="px-6 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center"
               >
                 {loading ? (
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                 ) : (
                   "Verify"
@@ -421,7 +460,9 @@ const Header = () => {
         <div className="fixed bottom-6 right-6 z-50 animate-slide-up-fade-in">
           <div className="bg-white p-4 rounded-lg shadow-xl flex items-center gap-3 border border-green-200">
             <CheckCircle className="text-green-500 w-6 h-6" />
-            <span className="text-gray-800 font-medium">Successfully logged in!</span>
+            <span className="text-gray-800 font-medium">
+              Successfully logged in!
+            </span>
           </div>
         </div>
       )}
