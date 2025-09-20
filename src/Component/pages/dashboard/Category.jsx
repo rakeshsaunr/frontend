@@ -1,8 +1,22 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchCategories,
+  addCategory,
+  updateCategory,
+  deleteCategory,
+  clearCategoryMessages,
+} from "../../../app/categorySlice";
 
 const Category = () => {
-  const [categories, setCategories] = useState([]);
+  const dispatch = useDispatch();
+  const {
+    categories,
+    successMessage: successMsg,
+    errorMessage: formError,
+    loading,
+  } = useSelector((state) => state.category);
+
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -11,42 +25,39 @@ const Category = () => {
     isActive: true,
   });
   const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
-  const fetchCategories = async () => {
-    try {
-      const res = await axios.get("https://navdana-backend-2.onrender.com/api/v1/category");
-      let cats = res.data?.data || res.data || [];
-      if (!Array.isArray(cats)) {
-        if (Array.isArray(res.data?.categories)) {
-          cats = res.data.categories;
-        } else {
-          cats = [];
-        }
-      }
-      setCategories(cats);
-    } catch (error) {
-      setFormError(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to fetch categories"
-      );
-      setCategories([]);
-      console.error("Error fetching categories:", error);
+  useEffect(() => {
+    // Clear error/success after 3s
+    if (formError || successMsg) {
+      const t = setTimeout(() => dispatch(clearCategoryMessages()), 3000);
+      return () => clearTimeout(t);
     }
-  };
+  }, [formError, successMsg, dispatch]);
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
     if (name === "image" && type === "file") {
-      setImageFile(files[0]);
+      const file = files[0];
+      setImageFile(file);
+      if (file) {
+        setImagePreview(URL.createObjectURL(file));
+        setFormData({
+          ...formData,
+          image: file,
+        });
+      } else {
+        setImagePreview(null);
+        setFormData({
+          ...formData,
+          image: "",
+        });
+      }
     } else {
       setFormData({
         ...formData,
@@ -57,95 +68,59 @@ const Category = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError("");
-    setSuccessMsg("");
-    setLoading(true);
+    dispatch(clearCategoryMessages());
 
-    const token = localStorage.getItem("token"); // Get token
+    let dataToSend = {
+      ...formData,
+    };
 
-    try {
-      let dataToSend;
-      let config = {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      };
+    // If a new image is selected, convert to base64 and send as string
+    if (imageFile) {
+      // Convert image file to base64 string
+      const toBase64 = (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = (error) => reject(error);
+        });
 
-      if (imageFile) {
-        dataToSend = new FormData();
-        dataToSend.append("name", formData.name);
-        dataToSend.append("slug", formData.slug);
-        dataToSend.append("description", formData.description);
-        dataToSend.append("isActive", formData.isActive);
-        dataToSend.append("image", imageFile);
-        config.headers["Content-Type"] = "multipart/form-data";
-      } else {
-        dataToSend = { ...formData };
+      try {
+        const base64Image = await toBase64(imageFile);
+        dataToSend.image = base64Image;
+      } catch {
+        // If error, fallback to empty string
+        dataToSend.image = "";
       }
-
-      if (editingId) {
-        // PUT request
-        await axios.put(
-          `https://navdana-backend-2.onrender.com/api/v1/category/${editingId}`,
-          dataToSend,
-          config
-        );
-        setSuccessMsg("Category updated successfully!");
-      } else {
-        // POST request
-        await axios.post(
-          "https://navdana-backend-2.onrender.com/api/v1/category",
-          dataToSend,
-          config
-        );
-        setSuccessMsg("Category added successfully!");
-      }
-
-      setFormData({ name: "", slug: "", description: "", image: "", isActive: true });
-      setImageFile(null);
-      setEditingId(null);
-      fetchCategories();
-    } catch (error) {
-      setFormError(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Error saving category"
-      );
-      console.error("Error saving category:", error);
+    } else if (typeof dataToSend.image === "object" && dataToSend.image !== null) {
+      // If image is still a File object but not selected, clear it
+      dataToSend.image = "";
     }
 
-    setLoading(false);
+    if (editingId) {
+      await dispatch(
+        updateCategory({
+          id: editingId,
+          data: dataToSend,
+        })
+      );
+    } else {
+      await dispatch(
+        addCategory(dataToSend)
+      );
+    }
+
+    setFormData({ name: "", slug: "", description: "", image: "", isActive: true });
+    setImageFile(null);
+    setImagePreview(null);
+    setEditingId(null);
+    // No need to refetch, redux handles it
   };
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
-      setFormError("");
-      setSuccessMsg("");
-      setLoading(true);
-
-      const token = localStorage.getItem("token");
-
-      try {
-        await axios.delete(
-          `https://navdana-backend-2.onrender.com/api/v1/category/${id}`,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : "",
-            },
-          }
-        );
-        setSuccessMsg("Category deleted successfully!");
-        fetchCategories();
-      } catch (error) {
-        setFormError(
-          error?.response?.data?.message ||
-          error?.message ||
-          "Error deleting category"
-        );
-        console.error("Error deleting category:", error);
-      }
-
-      setLoading(false);
+      dispatch(clearCategoryMessages());
+      await dispatch(deleteCategory(id));
     }
   };
 
@@ -158,17 +133,17 @@ const Category = () => {
       isActive: cat.isActive !== undefined ? cat.isActive : true,
     });
     setImageFile(null);
+    setImagePreview(cat.image || null);
     setEditingId(cat._id);
-    setFormError("");
-    setSuccessMsg("");
+    dispatch(clearCategoryMessages());
   };
 
   const handleCancelEdit = () => {
     setFormData({ name: "", slug: "", description: "", image: "", isActive: true });
     setImageFile(null);
+    setImagePreview(null);
     setEditingId(null);
-    setFormError("");
-    setSuccessMsg("");
+    dispatch(clearCategoryMessages());
   };
 
   const safeCategories = Array.isArray(categories) ? categories : [];
@@ -233,6 +208,16 @@ const Category = () => {
               onChange={handleChange}
               className="border border-gray-300 p-2 rounded file:mr-2 sm:file:mr-4 file:py-2 file:px-2 sm:file:px-4 file:rounded file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 w-full"
             />
+            {/* Show preview if available */}
+            {(imagePreview || (formData.image && typeof formData.image === "string")) && (
+              <div className="mt-2">
+                <img
+                  src={imagePreview || (typeof formData.image === "string" ? formData.image : undefined)}
+                  alt="Preview"
+                  className="h-12 w-20 object-contain border rounded shadow"
+                />
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-1 md:col-span-2 w-full">
             <label className="font-medium text-gray-700 mb-1 text-sm sm:text-base" htmlFor="cat-desc">Description</label>
@@ -297,9 +282,9 @@ const Category = () => {
               </div>
             )}
             <div className="flex flex-col gap-4">
-              {safeCategories.map((cat) => (
+              {safeCategories.map((cat, idx) => (
                 <div
-                  key={cat._id}
+                  key={cat._id || idx}
                   className="bg-white rounded-lg shadow border p-4 flex flex-col gap-2"
                 >
                   <div className="flex items-center gap-3">
@@ -367,7 +352,7 @@ const Category = () => {
               <tbody>
                 {safeCategories.map((cat, idx) => (
                   <tr
-                    key={cat._id}
+                    key={cat._id || idx}
                     className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
                   >
                     <td className="border-b px-4 py-2">{cat.name}</td>
