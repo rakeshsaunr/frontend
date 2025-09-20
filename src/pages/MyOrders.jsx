@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import {
   Loader2,
   Package,
@@ -11,10 +10,11 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  CircleDollarSign,
-  Truck,
   FileText,
 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { setOrders } from "../app/orderSlice";
+import axios from "axios";
 
 const statusStyles = {
   completed: "bg-green-100 text-green-700 ring-1 ring-inset ring-green-200",
@@ -24,7 +24,8 @@ const statusStyles = {
 };
 
 const MyOrders = () => {
-  const [orders, setOrders] = useState([]);
+  const dispatch = useDispatch();
+  const orders = useSelector((state) => state.order.orders);
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
 
@@ -33,13 +34,14 @@ const MyOrders = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axios.get("https://navdana-backend-2.onrender.com/api/v1/order/user-orders", {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
-        // Assuming the API returns a `prices` object with subtotal, shipping, tax, and total.
-        // If not, you may need to calculate it here.
-        setOrders(res.data.orders || []);
+        const res = await axios.get(
+          "https://navdana-backend-2.onrender.com/api/v1/order/user-orders",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          }
+        );
+        dispatch(setOrders(res.data.orders || []));
       } catch (err) {
         console.error("Failed to fetch orders:", err);
       } finally {
@@ -47,7 +49,7 @@ const MyOrders = () => {
       }
     };
     fetchOrders();
-  }, [token]);
+  }, [token, dispatch]);
 
   if (loading) {
     return (
@@ -66,7 +68,7 @@ const MyOrders = () => {
           </span>
         </h1>
 
-        {orders.length === 0 ? (
+        {(!orders || orders.length === 0) ? (
           <div className="flex flex-col items-center justify-center h-64">
             <Package className="w-16 h-16 text-gray-400 mb-4" />
             <p className="text-gray-600 text-lg font-medium">
