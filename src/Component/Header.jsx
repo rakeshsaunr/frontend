@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "/logo.png";
-import { useCart } from "../context/CartContext";
 
 // Redux imports
 import { useSelector, useDispatch } from "react-redux";
@@ -41,7 +40,8 @@ const Header = () => {
   // Redux state
   const authState = useSelector((state) => state.auth);
   const categories = useSelector((state) => state.category.categories);
-  const { cart } = useCart();
+  // const cartItems = useSelector((state) => state.cart.items);
+  const cartCount = useSelector((state) => state.cart.count);
 
   // On mount, sync Redux auth state with localStorage
   useEffect(() => {
@@ -231,9 +231,9 @@ const Header = () => {
             aria-label="Shopping Cart"
           >
             <ShoppingCart className="w-6 h-6 text-gray-700 hover:text-gray-900 transition-colors" />
-            {cart.length > 0 && (
+            {cartCount > 0 && (
               <span className="absolute -top-1 -right-1 inline-flex items-center justify-center h-4 w-4 text-xs font-bold text-white bg-red-600 rounded-full ring-2 ring-white animate-bounce-in">
-                {cart.length}
+                {cartCount}
               </span>
             )}
           </div>
