@@ -10,8 +10,15 @@ import {
   Loader2,
   Truck,
 } from "lucide-react";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  incrementCartItem,
+  decrementCartItem,
+  removeCartItem,
+  clearCart,
+} from "../app/cartSlice";
 
-// ColorNameConverter function
+// ColorNameConverter function (safe)
 const ColorNameConverter = (hex) => {
   if (!hex) return "";
   try {
@@ -22,21 +29,9 @@ const ColorNameConverter = (hex) => {
 };
 
 export default function CartPage() {
-  // Redux is not working, so use localStorage for cart state
-  const [cart, setCart] = useState(() => {
-    try {
-      const stored = localStorage.getItem("cart");
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Helper to update cart in state and localStorage
-  const updateCart = (newCart) => {
-    setCart(newCart);
-    localStorage.setItem("cart", JSON.stringify(newCart));
-  };
+  const cart = useSelector((state) => state.cart.items);
+  const count = useSelector((state) => state.cart.count);
+  const dispatch = useDispatch();
 
   const [showCheckout, setShowCheckout] = useState(false);
   const [shippingInfo, setShippingInfo] = useState({
@@ -50,7 +45,6 @@ export default function CartPage() {
   });
   const [loading, setLoading] = useState(false);
 
-  // --- User authentication states ---
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")) || null);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
 
@@ -62,67 +56,40 @@ export default function CartPage() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
 
-  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalPrice = cart.reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity || 0)), 0);
 
-  // --- Cart handlers ---
+  // handlers
   const handleIncrement = (item) => {
-    const idx = cart.findIndex(
-      (i) =>
-        i._id === item._id &&
-        i.size === item.size &&
-        i.color === item.color &&
-        i.sku === item.sku
-    );
-    if (idx !== -1) {
-      if (cart[idx].quantity < (cart[idx].stock || 1)) {
-        const newCart = [...cart];
-        newCart[idx] = { ...newCart[idx], quantity: newCart[idx].quantity + 1 };
-        updateCart(newCart);
-      } else {
-        alert("No more stock available for this variant!");
-      }
-    }
+    dispatch(incrementCartItem({
+      _id: item._id,
+      size: item.size,
+      color: item.color,
+      sku: item.sku
+    }));
   };
 
   const handleDecrement = (item) => {
-    const idx = cart.findIndex(
-      (i) =>
-        i._id === item._id &&
-        i.size === item.size &&
-        i.color === item.color &&
-        i.sku === item.sku
-    );
-    if (idx !== -1) {
-      if (cart[idx].quantity > 1) {
-        const newCart = [...cart];
-        newCart[idx] = { ...newCart[idx], quantity: newCart[idx].quantity - 1 };
-        updateCart(newCart);
-      } else {
-        // Remove item if quantity goes to 0
-        const newCart = cart.filter((_, i) => i !== idx);
-        updateCart(newCart);
-      }
-    }
+    dispatch(decrementCartItem({
+      _id: item._id,
+      size: item.size,
+      color: item.color,
+      sku: item.sku
+    }));
   };
 
   const handleRemove = (item) => {
-    const newCart = cart.filter(
-      (i) =>
-        !(
-          i._id === item._id &&
-          i.size === item.size &&
-          i.color === item.color &&
-          i.sku === item.sku
-        )
-    );
-    updateCart(newCart);
+    dispatch(removeCartItem({
+      _id: item._id,
+      size: item.size,
+      color: item.color,
+      sku: item.sku
+    }));
   };
 
   const handleChange = (e) => {
     setShippingInfo({ ...shippingInfo, [e.target.name]: e.target.value });
   };
 
-  // --- Checkout flow (name/email/otp) ---
   const startCheckout = () => {
     if (!user) {
       setShowNamePopup(true);
@@ -164,7 +131,6 @@ export default function CartPage() {
         return;
       }
       setLoading(true);
-
       const res = await axios.post(
         "https://navdana-backend-2.onrender.com/api/v1/user/verify",
         { name, email, otp, token: token || null },
@@ -173,16 +139,12 @@ export default function CartPage() {
           withCredentials: true,
         }
       );
-
       setLoading(false);
-
       const { user: loggedInUser, token: authToken } = res.data;
       setUser(loggedInUser);
       setToken(authToken);
-
       localStorage.setItem("user", JSON.stringify(loggedInUser));
       localStorage.setItem("token", authToken);
-
       setShowOtpPopup(false);
       setShowCheckout(true);
     } catch {
@@ -191,7 +153,7 @@ export default function CartPage() {
     }
   };
 
-  // ---------- Checkout with Razorpay ----------
+  // Razorpay checkout (same as original)
   const handleCheckout = async () => {
     const { fullName, address, city, postalCode, country } = shippingInfo;
     if (!fullName || !address || !city || !postalCode || !country) {
@@ -202,7 +164,6 @@ export default function CartPage() {
     try {
       setLoading(true);
 
-      // 1) Create order on backend (DB order + Razorpay order)
       const createOrderPayload = {
         items: cart.map((item) => ({
           product: item._id,
@@ -224,7 +185,6 @@ export default function CartPage() {
         }
       );
 
-      // Backend must return: { order, razorpayOrder, key }
       const { order, razorpayOrder, key } = orderRes.data;
 
       if (!razorpayOrder || !key) {
@@ -233,7 +193,6 @@ export default function CartPage() {
         return;
       }
 
-      // 2) Dynamically load Razorpay SDK (if not present)
       if (!window.Razorpay) {
         const script = document.createElement("script");
         script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -245,45 +204,36 @@ export default function CartPage() {
         });
       }
 
-      // 3) Configure Razorpay checkout options
       const options = {
-        key, // public key returned by backend
+        key,
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         name: "Navdana Store",
         description: `Order #${order._id}`,
         order_id: razorpayOrder.id,
         handler: async function (response) {
-          // This handler runs after successful payment in Razorpay popup
           try {
             setLoading(true);
-            // 4) Verify payment on backend
             const verifyRes = await axios.post(
               "https://navdana-backend-2.onrender.com/api/v1/order/verify",
               {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
-                // optionally send DB order id so backend can also use it
                 orderId: order._id,
               },
               { headers: { Authorization: `Bearer ${token}` } }
             );
-
             setLoading(false);
-
             if (verifyRes.data && verifyRes.data.success) {
               alert("Payment Successful & Order Placed!");
-              // Clear cart in localStorage and state
-              updateCart([]);
+              dispatch(clearCart());
               setShowCheckout(false);
             } else {
-              console.error("Verify response:", verifyRes.data);
               alert("Payment verification failed! If amount was charged, contact support.");
             }
-          } catch (err) {
+          } catch {
             setLoading(false);
-            console.error("Verify error:", err);
             alert("Payment verification failed. Please try again or contact support.");
           }
         },
@@ -293,27 +243,19 @@ export default function CartPage() {
           contact: shippingInfo.phone || (user?.phone || ""),
         },
         notes: {
-          orderId: order?._id || "", // optional
+          orderId: order?._id || "",
         },
         theme: { color: "#000000" },
       };
 
-      // 4) Open Razorpay popup
       const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function (resp) {
-        // optional: handle payment failure event
-        console.error("Razorpay payment failed:", resp);
+      rzp.on("payment.failed", function () {
         alert("Payment failed. Please try again.");
       });
       rzp.open();
-
-      // keep loading false because popup is open
       setLoading(false);
     } catch (err) {
-      console.error("Create order / checkout error:", err);
       setLoading(false);
-
-      // give user a helpful error
       if (err.response && err.response.data && err.response.data.message) {
         alert("Checkout failed: " + err.response.data.message);
       } else {
@@ -322,7 +264,6 @@ export default function CartPage() {
     }
   };
 
-  // --- Empty cart UI ---
   if (cart.length === 0)
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gray-50 p-6">
@@ -341,19 +282,16 @@ export default function CartPage() {
     );
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
-      <h2 className="text-4xl sm:text-5xl font-extrabold text-center text-gray-900 mb-10 tracking-tight">
-        <span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-          Your Cart
-        </span>
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 min-h-screen">
+      <h2 className="text-4xl sm:text-5xl font-medium text-center text-gray-900 mb-10 tracking-tight">
+        <span className="text-black text-3xl sm:text-4xl font-samibold">Your Cart</span>
       </h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Cart Items Section */}
         <div className="lg:col-span-2 space-y-6">
           {cart.map((item, idx) => (
             <div
-              key={`${item._id}-${item.size}-${item.color}-${item.sku}-${idx}`}
+              key={`${item._id}-${item.size || ""}-${item.color || ""}-${item.sku || ""}-${idx}`}
               className="flex flex-col sm:flex-row items-center p-6 rounded-xl transition-all duration-300"
             >
               <img
@@ -365,7 +303,7 @@ export default function CartPage() {
                 <div className="flex justify-between items-start w-full">
                   <div>
                     <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{item.name}</h3>
-                    <p className="text-gray-600 mt-1">₹{item.price.toFixed(2)}</p>
+                    <p className="text-gray-600 mt-1">₹{Number(item.price).toFixed(2)}</p>
                     <div className="text-sm text-gray-500 mt-2 space-y-1">
                       {item.size && <p>Size: {item.size}</p>}
                       {item.color && (
@@ -375,7 +313,7 @@ export default function CartPage() {
                             className="w-4 h-4 rounded-full border border-gray-300 inline-block"
                             style={{ backgroundColor: item.color }}
                             title={item.color}
-                          ></span>
+                          />
                           <span>{ColorNameConverter(item.color) || item.color}</span>
                         </div>
                       )}
@@ -410,17 +348,16 @@ export default function CartPage() {
                 </div>
               </div>
               <div className="mt-4 sm:mt-0 sm:ml-auto text-xl font-bold text-gray-900">
-                ₹{(item.price * item.quantity).toFixed(2)}
+                ₹{(Number(item.price) * Number(item.quantity || 0)).toFixed(2)}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Order Summary Section */}
         <div className="lg:col-span-1 p-6 rounded-xl h-fit sticky top-4">
           <h3 className="text-2xl font-bold text-gray-900 mb-6">Order Summary</h3>
           <div className="flex justify-between items-center mb-4 text-lg">
-            <span className="text-gray-700">Subtotal ({cart.length} items):</span>
+            <span className="text-gray-700">Subtotal ({count} items):</span>
             <span className="font-semibold text-gray-900">₹{totalPrice.toFixed(2)}</span>
           </div>
           <div className="flex justify-between items-center mb-6 pb-6 border-b border-gray-200 text-lg">
@@ -433,14 +370,10 @@ export default function CartPage() {
           </div>
           <button
             onClick={startCheckout}
-            className="w-full px-8 py-4 bg-indigo-600 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-indigo-700 transition-colors disabled:bg-gray-400"
+            className="w-full px-4 py-2 bg-black text-white font-semibold text-base rounded-md shadow hover:bg-gray-900 transition-colors disabled:bg-gray-400"
             disabled={loading}
           >
-            {loading ? (
-              <Loader2 className="animate-spin h-6 w-6 mx-auto" />
-            ) : (
-              "Proceed to Checkout"
-            )}
+            {loading ? <Loader2 className="animate-spin h-5 w-5 mx-auto" /> : "Proceed to Checkout"}
           </button>
         </div>
       </div>
@@ -448,28 +381,18 @@ export default function CartPage() {
       {/* Popups (Name → Email → OTP → Checkout) */}
       {showNamePopup && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl animate-fade-in">
+          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl">
             <h2 className="text-2xl font-bold mb-4 text-gray-900">Enter Your Name</h2>
             <input
               type="text"
               placeholder="Full Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+              className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 transition-colors"
             />
             <div className="flex justify-end gap-3 mt-4">
-              <button
-                onClick={() => setShowNamePopup(false)}
-                className="px-5 py-2 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={nextToEmail}
-                className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                Next
-              </button>
+              <button onClick={() => setShowNamePopup(false)} className="px-5 py-2 text-gray-700 rounded-lg">Cancel</button>
+              <button onClick={nextToEmail} className="px-5 py-2 bg-indigo-600 text-white rounded-lg">Next</button>
             </div>
           </div>
         </div>
@@ -477,32 +400,12 @@ export default function CartPage() {
 
       {showEmailPopup && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl animate-fade-in">
+          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl">
             <h2 className="text-2xl font-bold mb-4 text-gray-900">Enter Your Email</h2>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-            />
+            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 transition-colors" />
             <div className="flex justify-end gap-3 mt-4">
-              <button
-                onClick={() => setShowEmailPopup(false)}
-                className="px-5 py-2 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={sendOtp}
-                className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                {loading ? (
-                  <Loader2 className="animate-spin h-5 w-5" />
-                ) : (
-                  "Send OTP"
-                )}
-              </button>
+              <button onClick={() => setShowEmailPopup(false)} className="px-5 py-2 text-gray-700 rounded-lg">Cancel</button>
+              <button onClick={sendOtp} className="px-5 py-2 bg-indigo-600 text-white rounded-lg">{loading ? <Loader2 className="animate-spin h-5 w-5" /> : "Send OTP"}</button>
             </div>
           </div>
         </div>
@@ -510,32 +413,12 @@ export default function CartPage() {
 
       {showOtpPopup && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl animate-fade-in">
+          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl">
             <h2 className="text-2xl font-bold mb-4 text-gray-900">Enter OTP</h2>
-            <input
-              type="text"
-              placeholder="OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              className="border border-gray-300 px-4 py-2 rounded-lg w-full text-center tracking-widest text-lg font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-            />
+            <input type="text" placeholder="OTP" value={otp} onChange={(e) => setOtp(e.target.value)} className="border border-gray-300 px-4 py-2 rounded-lg w-full text-center tracking-widest text-lg font-mono focus:ring-2 focus:ring-indigo-500 transition-colors" />
             <div className="flex justify-end gap-3 mt-4">
-              <button
-                onClick={() => setShowOtpPopup(false)}
-                className="px-5 py-2 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={verifyOtp}
-                className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                {loading ? (
-                  <Loader2 className="animate-spin h-5 w-5" />
-                ) : (
-                  "Verify & Continue"
-                )}
-              </button>
+              <button onClick={() => setShowOtpPopup(false)} className="px-5 py-2 text-gray-700 rounded-lg">Cancel</button>
+              <button onClick={verifyOtp} className="px-5 py-2 bg-indigo-600 text-white rounded-lg">{loading ? <Loader2 className="animate-spin h-5 w-5" /> : "Verify & Continue"}</button>
             </div>
           </div>
         </div>
@@ -543,85 +426,18 @@ export default function CartPage() {
 
       {showCheckout && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full p-8 relative shadow-2xl animate-fade-in">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900 flex items-center gap-2">
-              <Truck size={24} /> Shipping Details
-            </h2>
+          <div className="bg-white rounded-xl max-w-lg w-full p-8 relative shadow-2xl">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900 flex items-center gap-2"><Truck size={24} /> Shipping Details</h2>
             <form className="flex flex-col gap-4" onSubmit={(e) => e.preventDefault()}>
-              <input
-                type="text"
-                placeholder="Full Name"
-                name="fullName"
-                value={shippingInfo.fullName}
-                onChange={handleChange}
-                className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Address"
-                name="address"
-                value={shippingInfo.address}
-                onChange={handleChange}
-                className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-                required
-              />
-              <input
-                type="text"
-                placeholder="City"
-                name="city"
-                value={shippingInfo.city}
-                onChange={handleChange}
-                className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Postal Code"
-                name="postalCode"
-                value={shippingInfo.postalCode}
-                onChange={handleChange}
-                className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Country"
-                name="country"
-                value={shippingInfo.country}
-                onChange={handleChange}
-                className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Phone"
-                name="phone"
-                value={shippingInfo.phone}
-                onChange={handleChange}
-                className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-              />
-
+              <input type="text" placeholder="Full Name" name="fullName" value={shippingInfo.fullName} onChange={handleChange} className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 transition-colors" required />
+              <input type="text" placeholder="Address" name="address" value={shippingInfo.address} onChange={handleChange} className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 transition-colors" required />
+              <input type="text" placeholder="City" name="city" value={shippingInfo.city} onChange={handleChange} className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 transition-colors" required />
+              <input type="text" placeholder="Postal Code" name="postalCode" value={shippingInfo.postalCode} onChange={handleChange} className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 transition-colors" required />
+              <input type="text" placeholder="Country" name="country" value={shippingInfo.country} onChange={handleChange} className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 transition-colors" required />
+              <input type="text" placeholder="Phone" name="phone" value={shippingInfo.phone} onChange={handleChange} className="border border-gray-300 px-4 py-2 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 transition-colors" />
               <div className="flex justify-between mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowCheckout(false)}
-                  className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCheckout}
-                  className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="animate-spin h-5 w-5 mx-auto" />
-                  ) : (
-                    `Pay ₹${totalPrice.toFixed(2)}`
-                  )}
-                </button>
+                <button type="button" onClick={() => setShowCheckout(false)} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg">Cancel</button>
+                <button type="button" onClick={handleCheckout} className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg" disabled={loading}>{loading ? <Loader2 className="animate-spin h-5 w-5" /> : `Pay ₹${totalPrice.toFixed(2)}`}</button>
               </div>
             </form>
           </div>
