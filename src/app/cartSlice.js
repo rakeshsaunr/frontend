@@ -1,51 +1,155 @@
-import { createSlice } from '@reduxjs/toolkit';
+// src/app/cartSlice.js
+import { createSlice } from "@reduxjs/toolkit";
 
-// Load cart from localStorage or start with empty array
-const persistedCart = JSON.parse(localStorage.getItem('cart')) || [];
+const STORAGE_KEY = "cart";
+const persistedCart = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+
+function calculateCount(items) {
+  return items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+}
+
+// normalize helpers
+function getId(obj) {
+  if (!obj) return "";
+  // prefer _id then id
+  return obj._id ?? obj.id ?? "";
+}
+function norm(v) {
+  if (v == null) return "";
+  return String(v);
+}
+
+function matchItem(a, b) {
+  // a = existing item in state, b = search object / payload
+  return (
+    norm(getId(a)) === norm(getId(b)) &&
+    norm(a.size) === norm(b.size) &&
+    norm(a.color) === norm(b.color) &&
+    norm(a.sku) === norm(b.sku)
+  );
+}
 
 export const cartSlice = createSlice({
-  name: 'cart',
+  name: "cart",
   initialState: {
     items: persistedCart,
+    count: calculateCount(persistedCart),
+    lastAdded: null,
   },
   reducers: {
     addToCart(state, action) {
-      // Find if item with same _id, size, color, sku exists
-      const { _id, size, color, sku } = action.payload;
-      const existingItem = state.items.find(
-        (item) =>
-          item._id === _id &&
-          item.size === size &&
-          item.color === color &&
-          item.sku === sku
-      );
-      if (existingItem) {
-        // Increase quantity by payload.quantity or 1
-        existingItem.quantity += action.payload.quantity || 1;
+      const payload = action.payload || {};
+      const searchObj = {
+        _id: payload._id ?? payload.id ?? "",
+        size: payload.size ?? "",
+        color: payload.color ?? "",
+        sku: payload.sku ?? "",
+      };
+
+      const idx = state.items.findIndex((it) => matchItem(it, searchObj));
+      if (idx >= 0) {
+        state.items[idx].quantity = (Number(state.items[idx].quantity) || 0) + (Number(payload.quantity) || 1);
       } else {
-        // Add new item with quantity
         state.items.push({
-          ...action.payload,
-          quantity: action.payload.quantity || 1,
+          ...payload,
+          // ensure id consistency in stored item (keep _id if exists else id)
+          _id: payload._id ?? payload.id ?? "",
+          quantity: Number(payload.quantity) || 1,
         });
       }
-      // Persist to localStorage
-      localStorage.setItem('cart', JSON.stringify(state.items));
+
+      state.count = calculateCount(state.items);
+      state.lastAdded = {
+        _id: payload._id ?? payload.id ?? "",
+        name: payload.name ?? "",
+        price: Number(payload.price) || 0,
+        image: payload.image ?? "",
+        quantity: Number(payload.quantity) || 1,
+        size: payload.size ?? "",
+        color: payload.color ?? "",
+        sku: payload.sku ?? "",
+      };
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
     },
-    removeFromCart(state, action) {
-      state.items = state.items.filter((it) => it.id !== action.payload);
-      localStorage.setItem("cart", JSON.stringify(state.items));
+
+    incrementCartItem(state, action) {
+      const payload = action.payload || {};
+      const searchObj = {
+        _id: payload._id ?? payload.id ?? "",
+        size: payload.size ?? "",
+        color: payload.color ?? "",
+        sku: payload.sku ?? "",
+      };
+      const item = state.items.find((i) => matchItem(i, searchObj));
+      if (item) {
+        item.quantity = (Number(item.quantity) || 0) + 1;
+        state.lastAdded = { ...item };
+      }
+      state.count = calculateCount(state.items);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
     },
+
+    decrementCartItem(state, action) {
+      const payload = action.payload || {};
+      const searchObj = {
+        _id: payload._id ?? payload.id ?? "",
+        size: payload.size ?? "",
+        color: payload.color ?? "",
+        sku: payload.sku ?? "",
+      };
+      const idx = state.items.findIndex((i) => matchItem(i, searchObj));
+      if (idx >= 0) {
+        const it = state.items[idx];
+        if ((Number(it.quantity) || 0) > 1) {
+          it.quantity = (Number(it.quantity) || 0) - 1;
+          state.lastAdded = { ...it };
+        } else {
+          state.items.splice(idx, 1);
+          state.lastAdded = null;
+        }
+      }
+      state.count = calculateCount(state.items);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+    },
+
+    removeCartItem(state, action) {
+      const payload = action.payload || {};
+      const searchObj = {
+        _id: payload._id ?? payload.id ?? "",
+        size: payload.size ?? "",
+        color: payload.color ?? "",
+        sku: payload.sku ?? "",
+      };
+      state.items = state.items.filter((i) => !matchItem(i, searchObj));
+      state.count = calculateCount(state.items);
+      state.lastAdded = null;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+    },
+
     clearCart(state) {
       state.items = [];
-      localStorage.removeItem("cart");
+      state.count = 0;
+      state.lastAdded = null;
+      localStorage.removeItem(STORAGE_KEY);
     },
+
     setCart(state, action) {
-      state.items = action.payload;
-      localStorage.setItem("cart", JSON.stringify(state.items));
+      state.items = Array.isArray(action.payload) ? action.payload : [];
+      state.count = calculateCount(state.items);
+      state.lastAdded = null;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
     },
   },
 });
 
-export const { addToCart, removeFromCart, clearCart, setCart } = cartSlice.actions;
+export const {
+  addToCart,
+  incrementCartItem,
+  decrementCartItem,
+  removeCartItem,
+  clearCart,
+  setCart,
+} = cartSlice.actions;
+
 export default cartSlice.reducer;
