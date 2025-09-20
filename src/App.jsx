@@ -1,6 +1,5 @@
 // App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { CartProvider } from "./context/CartContext"; 
 import './App.css';
 
 // Components
@@ -66,88 +65,86 @@ function ProtectedRoute({ element, role }) {
 
 function App() {
   return (
-    <CartProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-grow">
-            <Routes>
-              {/* Info Routes */}
-              <Route path="/about" element={<About />} />
-              <Route path="/faqs" element={<Faqs />} />
-              <Route path="/terms-conditions" element={<TermsConditions />} />
-              <Route path="/shiping-policy" element={<ShipingPolicy />} />
-              <Route path="/our-team" element={<OurTeam />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/returns-exchanges" element={<ReturnsExchanges />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/cancel-policy" element={<CancelPolicy />} />
-              <Route path="/refund-policy" element={<RefundPolicy />} />
-              <Route path="/return-exchange-request" element={<ReturnExchangeRequest />} />
-              <Route path="/career" element={<Career />} />
+    <BrowserRouter>
+      <ScrollToTop />
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow">
+          <Routes>
+            {/* Info Routes */}
+            <Route path="/about" element={<About />} />
+            <Route path="/faqs" element={<Faqs />} />
+            <Route path="/terms-conditions" element={<TermsConditions />} />
+            <Route path="/shiping-policy" element={<ShipingPolicy />} />
+            <Route path="/our-team" element={<OurTeam />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/returns-exchanges" element={<ReturnsExchanges />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/cancel-policy" element={<CancelPolicy />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/return-exchange-request" element={<ReturnExchangeRequest />} />
+            <Route path="/career" element={<Career />} />
 
-              {/* Product & Cart */}
-              <Route path="/product/:id" element={<ProductDetails />} />
-              <Route path="/all-products" element={<AllProducts />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/collection-pages/:id" element={<CollectionPage />} />
+            {/* Product & Cart */}
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/all-products" element={<AllProducts />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/collection-pages/:id" element={<CollectionPage />} />
 
-              {/* 🔹 Dashboard (protected for admin) */}
-              <Route
-                path="/dashboard"
-                element={<ProtectedRoute role="admin" element={<DashboardLayout><Dashboard /></DashboardLayout>} />}
-              />
-              <Route
-                path="/dashboard/reports"
-                element={<ProtectedRoute role="admin" element={<DashboardLayout><Reports /></DashboardLayout>} />}
-              />
-              <Route
-                path="/dashboard/settings"
-                element={<ProtectedRoute role="admin" element={<DashboardLayout><Settings /></DashboardLayout>} />}
-              />
-              <Route
-                path="/dashboard/category"
-                element={<ProtectedRoute role="admin" element={<DashboardLayout><Category /></DashboardLayout>} />}
-              />
-              <Route
-                path="/dashboard/product"
-                element={<ProtectedRoute role="admin" element={<DashboardLayout><Product /></DashboardLayout>} />}
-              />
-              <Route
-                path="/dashboard/banners"
-                element={<ProtectedRoute role="admin" element={<DashboardLayout><Banners /></DashboardLayout>} />}
-              />
-              <Route
-                path="/dashboard/users"
-                element={<ProtectedRoute role="admin" element={<DashboardLayout><Users /></DashboardLayout>} />}
-              />
-              <Route
-                path="/dashboard/orders"
-                element={<ProtectedRoute role="admin" element={<DashboardLayout><Orders /></DashboardLayout>} />}
-              />
-              <Route
-                path="/dashboard/calendar"
-                element={<ProtectedRoute role="admin" element={<DashboardLayout><Calendar /></DashboardLayout>} />}
-              />
+            {/* 🔹 Dashboard (protected for admin) */}
+            <Route
+              path="/dashboard"
+              element={<ProtectedRoute role="admin" element={<DashboardLayout><Dashboard /></DashboardLayout>} />}
+            />
+            <Route
+              path="/dashboard/reports"
+              element={<ProtectedRoute role="admin" element={<DashboardLayout><Reports /></DashboardLayout>} />}
+            />
+            <Route
+              path="/dashboard/settings"
+              element={<ProtectedRoute role="admin" element={<DashboardLayout><Settings /></DashboardLayout>} />}
+            />
+            <Route
+              path="/dashboard/category"
+              element={<ProtectedRoute role="admin" element={<DashboardLayout><Category /></DashboardLayout>} />}
+            />
+            <Route
+              path="/dashboard/product"
+              element={<ProtectedRoute role="admin" element={<DashboardLayout><Product /></DashboardLayout>} />}
+            />
+            <Route
+              path="/dashboard/banners"
+              element={<ProtectedRoute role="admin" element={<DashboardLayout><Banners /></DashboardLayout>} />}
+            />
+            <Route
+              path="/dashboard/users"
+              element={<ProtectedRoute role="admin" element={<DashboardLayout><Users /></DashboardLayout>} />}
+            />
+            <Route
+              path="/dashboard/orders"
+              element={<ProtectedRoute role="admin" element={<DashboardLayout><Orders /></DashboardLayout>} />}
+            />
+            <Route
+              path="/dashboard/calendar"
+              element={<ProtectedRoute role="admin" element={<DashboardLayout><Calendar /></DashboardLayout>} />}
+            />
 
-              {/* Home */}
-              <Route path="/" element={<Home />} />
+            {/* Home */}
+            <Route path="/" element={<Home />} />
 
-              {/* Catch-all */}
-              <Route path="*" element={<ComingSoon />} />
+            {/* Catch-all */}
+            <Route path="*" element={<ComingSoon />} />
 
-              {/* Order Page  */}
-              <Route path='/my-orders' element={<MyOrders />} />
+            {/* Order Page  */}
+            <Route path='/my-orders' element={<MyOrders />} />
 
-            </Routes>
-          </main>
-          <Footer2 />
-        </div>
-      </BrowserRouter>
+          </Routes>
+        </main>
+        <Footer2 />
+      </div>
       <ChatPopup />
-    </CartProvider>
+    </BrowserRouter>
   );
 }
 
