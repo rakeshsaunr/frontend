@@ -18,7 +18,7 @@ export default function App() {
       await navigator.clipboard.writeText(textToCopy);
       setCopiedLink(textToCopy);
       setTimeout(() => setCopiedLink(null), 1000);
-    } catch (err) {
+    } catch {
       // fallback
       document.execCommand('copy');
     }
@@ -52,69 +52,91 @@ export default function App() {
       </div>
 
       <div className="max-w-3xl mx-auto">
+        {/* Shipping */}
         <section className="mb-8">
           <h3 className="text-xl font-bold text-[#b48a78] mb-3 flex items-center gap-2">
             <span role="img" aria-label="Shipping">📦</span> Shipping
           </h3>
           <ul className="list-disc ml-7 text-gray-700 space-y-1 text-lg">
             <li>
-              Orders processed within <span className="text-[#8b5a3c] font-semibold">2–4 days</span>
+              All orders are carefully processed within <span className="text-[#8b5a3c] font-semibold">2–4 business days</span>.
             </li>
             <li>
-              Delivered in <span className="text-[#8b5a3c] font-semibold">0–7 working days</span>
+              Products are shipped within <span className="text-[#8b5a3c] font-semibold">10–15 business days</span>.
             </li>
             <li>
-              Tracking details shared once dispatched
+              Tracking details will be shared as soon as your order is dispatched.
             </li>
           </ul>
         </section>
 
+        {/* Shipping Charges */}
         <section className="mb-8">
           <h3 className="text-xl font-bold text-[#b48a78] mb-3 flex items-center gap-2">
             <span role="img" aria-label="Shipping Charges">💰</span> Shipping Charges
           </h3>
           <ul className="list-disc ml-7 text-gray-700 space-y-1 text-lg">
-            <li>Calculated at checkout</li>
             <li>
-              <span className="text-[#8b5a3c] font-semibold">Free shipping</span> on promotions/minimum order value
+              Shipping charges are calculated at checkout.
+            </li>
+            <li>
+              Free shipping is available on promotional offers or on orders above the minimum order value.
             </li>
           </ul>
         </section>
 
+        {/* Exchanges */}
         <section className="mb-8">
           <h3 className="text-xl font-bold text-[#b48a78] mb-3 flex items-center gap-2">
-            <span role="img" aria-label="Returns">🔄</span> Returns & Exchanges
+            <span role="img" aria-label="Exchanges">🔄</span> Exchanges
           </h3>
           <ul className="list-disc ml-7 text-gray-700 space-y-1 text-lg">
             <li>
-              Accepted within <span className="text-[#8b5a3c] font-semibold">7 days</span> if unused, unwashed, tags intact
+              Exchange requests must be raised within <span className="text-[#8b5a3c] font-semibold">24–48 hours</span> of delivery.
             </li>
             <li>
-              <span className="text-[#8b5a3c] font-semibold">Non-returnable:</span> Sale items, customized items, accessories, intimate wear
+              Exchanges will only be accepted if the product is unused, unwashed, and has all original tags intact.
             </li>
           </ul>
         </section>
 
+        {/* Returns */}
+        <section className="mb-8">
+          <h3 className="text-xl font-bold text-[#b48a78] mb-3 flex items-center gap-2">
+            <span role="img" aria-label="Returns">↩️</span> Returns
+          </h3>
+          <ul className="list-disc ml-7 text-gray-700 space-y-1 text-lg">
+            <li>
+              We do not offer returns, except in cases where an incorrect or defective product has been dispatched by Navdana.
+            </li>
+          </ul>
+        </section>
+
+        {/* Refunds */}
         <section className="mb-8">
           <h3 className="text-xl font-bold text-[#b48a78] mb-3 flex items-center gap-2">
             <span role="img" aria-label="Refunds">💳</span> Refunds
           </h3>
           <ul className="list-disc ml-7 text-gray-700 space-y-1 text-lg">
             <li>
-              Refunds for NAVDANA APPARELS cancellations processed within <span className="text-[#8b5a3c] font-semibold">10–15 business days</span>
+              Refunds for cancellations by NAVDANA APPARELS will be processed within <span className="text-[#8b5a3c] font-semibold">10–15 business days</span>.
             </li>
           </ul>
         </section>
 
+        {/* Delays & Liability */}
         <section className="mb-8">
           <h3 className="text-xl font-bold text-[#b48a78] mb-3 flex items-center gap-2">
             <span role="img" aria-label="Delays">⚠️</span> Delays & Liability
           </h3>
           <ul className="list-disc ml-7 text-gray-700 space-y-1 text-lg">
-            <li>NAVDANA APPARELS is not liable for delays beyond its control</li>
+            <li>
+              NAVDANA APPARELS will not be held responsible for delays caused by factors beyond our control (such as courier delays, natural disruptions, or unforeseen circumstances).
+            </li>
           </ul>
         </section>
 
+        {/* Contact Us */}
         <section className="mb-8">
           <h3 className="text-xl font-bold text-[#b48a78] mb-3 flex items-center gap-2">
             <span role="img" aria-label="Contact">📞</span> Contact Us
@@ -139,7 +161,7 @@ export default function App() {
                 href="tel:+919311120477"
                 className="underline transition-all duration-300 hover:text-[#8b5a3c] text-[#b48a78]"
               >
-                91-9311120477
+                +91-9311120477
               </a>
             </div>
           </div>
